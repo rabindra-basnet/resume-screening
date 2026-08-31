@@ -1,0 +1,58 @@
+# ===== Environment & secrets =====
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# ===== Python-generated files =====
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+.egg/
+.eggs/
+*.so
+
+# ===== Virtual environments =====
+.venv/
+venv/
+env/
+
+# ===== Test / coverage =====
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+*.cover
+.tmp/
+.hypothesis/
+
+# ===== Lint / type-check =====
+.mypy_cache/
+.ruff_cache/
+.pyright/
+*_build/
+node_modules/
+
+# ===== Database / runtime artifacts =====
+*.db
+*.sqlite
+*.sqlite3
+output.json
+screening.db
+
+# ===== OS / editor =====
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ===== Misc =====
+*.log
+logs/
+tmp/

@@ -1,0 +1,117 @@
+[project]
+name = "agentic-resume-screening"
+version = "0.2.0"
+description = "Scalable agentic resume screening and matching with multi-provider LLM support."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+authors = [{ name = "Resume Screening Team" }]
+keywords = ["resume", "screening", "agent", "llm", "ai", "matching"]
+classifiers = [
+    "Programming Language :: Python :: 3.12",
+    "Framework :: FastAPI",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    "fastapi>=0.115,<1.0",
+    "uvicorn[standard]>=0.32,<1.0",
+    "pydantic>=2.9,<3.0",
+    "pydantic-settings>=2.6,<3.0",
+    "python-multipart>=0.0.12,<1.0",
+    "litellm>=1.55,<2.0",
+    "sqlalchemy[asyncio]>=2.0.36,<3.0",
+    "asyncpg>=0.30,<1.0",
+    "aiosqlite>=0.20,<1.0",
+    "alembic>=1.14,<2.0",
+    "pdfplumber>=0.11,<0.12",
+    "python-dotenv>=1.0,<2.0",
+    "tenacity>=9.0,<10.0",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.8,<0.9",
+    "bandit>=1.8,<2.0",
+    "mypy>=1.14,<2.0",
+    "pytest>=8.3,<9.0",
+    "pytest-asyncio>=0.24,<0.25",
+    "pytest-cov>=5.0,<7.0",
+    "httpx>=0.28,<1.0",
+    "respx>=0.22,<0.23",
+    "pre-commit>=3.8,<5.0",
+]
+
+[project.scripts]
+resume-screen = "app.main:cli_entry"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["app", "api", "tests"]
+
+[tool.ruff.lint]
+# E: errors, F: pyflakes, W: warnings, I: isort, UP: pyupgrade,
+# D: pydocstyle (docstrings), S: bandit (security), B: bugbear, BLE: blind except
+select = ["E", "F", "W", "I", "UP", "D", "S", "B", "BLE", "A", "C4"]
+ignore = [
+    # D107: missing docstring in __init__ — allow short constructors without docstring
+    "D107",
+    # D203/D212/D213: conflicting blank-line style in docstrings
+    "D203",
+    "D213",
+    # S101: assert usage allowed in tests
+    "S101",
+    # S104: binding to 0.0.0.0 — only in the local dev CLI entry point
+    "S104",
+    # B008: function calls in defaults — FastAPI dependency injection
+    # (`Depends`, `Form`, `File`) legitimately uses defaults; false positive.
+    "B008",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D", "S", "B", "BLE", "A"]
+"frontend/*" = ["D", "S"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+# Require docstrings on all public functions/classes
+property-decorators = ["property", "cached_property"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+docstring-code-format = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.coverage.run]
+source = ["app"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 70
+
+[tool.pyright]
+typeCheckingMode = "basic"
+pythonVersion = "3.12"
+
+[tool.bandit]
+exclude_dirs = ["tests", "ui", "venv", ".venv", "migrations"]
+# -ll = report medium+ severity; -iii = report high confidence only by default
+skips = ["B101", "B110"]
+
+[tool.mypy]
+python_version = "3.12"
+plugins = ["pydantic.mypy"]
+ignore_missing_imports = true
+check_untyped_defs = true
+disallow_untyped_defs = false
+warn_return_any = false
+exclude = ["tests/", "frontend/", "migrations/"]
