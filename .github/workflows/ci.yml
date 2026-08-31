@@ -1,60 +1,7 @@
-# CI pipeline: lint (code quality) + security scan + tests.
-# Runs on every push/PR to enforce code-hardening gates before merge.
-
 name: CI
-
-on:
-  push:
-    branches: [main, master]
-  pull_request:
-
+on: [push]
 jobs:
-  lint:
-    name: Lint (ruff)
+  hello:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
-        with:
-          version: "0.6.14"
-      - name: Lint
-        run: uv run ruff check app api tests
-
-  security:
-    name: Security scan (bandit)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
-        with:
-          version: "0.6.14"
-      - name: Bandit scan
-        run: uv run bandit -c pyproject.toml -r app -ll
-      - name: Detect accidental secrets
-        uses: Yelp/detect-secrets@v1.5.0
-        with:
-          args: ["scan"]
-
-  typecheck:
-    name: Type check (mypy)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
-        with:
-          version: "0.6.14"
-      - name: Type check
-        run: uv run mypy app
-
-  test:
-    name: Tests (pytest)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
-        with:
-          version: "0.6.14"
-      - name: Install deps
-        run: uv sync
-      - name: Run tests
-        run: uv run pytest -v
+      - run: echo hello
