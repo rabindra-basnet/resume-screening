@@ -14,7 +14,7 @@ api.interceptors.response.use(
     const status = err?.response?.status;
     const message =
       typeof detail === "string" ? detail : detail?.message || err?.message || "Request failed";
-    if (status === 401) {
+    if (status === 401 && !window.location.pathname.startsWith("/login")) {
       window.location.href = "/login";
     }
     return Promise.reject(new Error(message));

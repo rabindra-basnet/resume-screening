@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { apiGet, errMsg } from "../lib/api";
+import { apiGet } from "../lib/api";
 
 export interface User {
   id: string;
@@ -33,9 +33,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError(null);
       const me = await apiGet<User>("/auth/me");
       setUser(me);
-    } catch (err) {
-      setUser(null);
-      setError(errMsg(err));
+    } catch (err: unknown) {
+      // 401 is expected when not logged in — don't treat as error.
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes("401") || msg.includes("Not authenticated")) {
+        setUser(null);
+      } else {
+        setUser(null);
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
