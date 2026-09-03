@@ -9,7 +9,9 @@ environments to avoid resource exhaustion.
 from __future__ import annotations
 
 import logging
+import re
 from functools import lru_cache
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -21,6 +23,48 @@ from sqlalchemy.ext.asyncio import (
 from app.config.settings import get_settings
 
 logger = logging.getLogger(__name__)
+
+_POSTGRES_SCHEME_RE = re.compile(r"^postgres(ql)?$")
+_SSL_QUERY_KEYS = {"sslmode", "channel_binding"}
+
+
+def _normalize_postgres_url(url: str) -> tuple[str, dict]:
+    """Convert a ``postgres(ql)://`` URL to asyncpg and pull out SSL settings.
+
+    asyncpg does not accept ``sslmode``/``channel_binding`` query parameters the
+    way psycopg does; it configures SSL via a runtime ``ssl`` connect argument.
+    This helper strips those params and returns the normalized asyncpg URL plus
+    the SSL kwargs an asyncpg connection should use.
+
+    Args:
+        url: The original SQLAlchemy database URL.
+
+    Returns:
+        A ``(normalized_url, asyncpg_connect_kwargs)`` tuple.
+    """
+    scheme = urlsplit(url).scheme
+    if not _POSTGRES_SCHEME_RE.match(scheme):
+        return url, {}
+
+    # Normalize to the asyncpg driver.
+    rest = url[len(scheme):]
+    url = f"postgresql+asyncpg{rest}"
+
+    parts = urlsplit(url)
+    query = parse_qsl(parts.query, keep_blank_values=True)
+    connect_kwargs: dict = {}
+    keep: list[tuple[str, str]] = []
+    for key, value in query:
+        if key in _SSL_QUERY_KEYS:
+            if key == "sslmode" and value in {"require", "verify-ca", "verify-full"}:
+                connect_kwargs.setdefault("ssl", True)
+            elif key == "sslmode" and value in {"disable", "allow", "prefer"}:
+                connect_kwargs["ssl"] = False
+            continue
+        keep.append((key, value))
+
+    parts = parts._replace(query=urlencode(keep))
+    return urlunsplit(parts), connect_kwargs
 
 
 class Database:
@@ -36,14 +80,17 @@ class Database:
         # SQLite requires aiosqlite driver; normalize the URL safely.
         if url.startswith("sqlite://"):
             url = url.replace("sqlite:///", "sqlite+aiosqlite:///")
-        # Postgres needs an async driver; map `postgresql://` to asyncpg.
-        if url.startswith("postgresql://"):
-            url = "postgresql+asyncpg://" + url[len("postgresql://"):]
-        elif url.startswith("postgres://"):
-            url = "postgresql+asyncpg://" + url[len("postgres://"):]
+        # Postgres needs an async driver (asyncpg) and SSL handling.
+        if _POSTGRES_SCHEME_RE.match(urlsplit(url).scheme):
+            url, ssl_kwargs = _normalize_postgres_url(url)
+        else:
+            ssl_kwargs = {}
+
         connect_args: dict = {}
         if "sqlite" in url:
             connect_args = {"check_same_thread": False}
+        else:
+            connect_args.update(ssl_kwargs)
 
         self.engine: AsyncEngine = create_async_engine(
             url,
