@@ -39,5 +39,6 @@ class EvaluationResult(BaseModel):
     reason: str = ""
     matched_skills: list[str] = Field(default_factory=list)
     missing_skills: list[str] = Field(default_factory=list)
+    weak_skills: list[str] = Field(default_factory=list)
     skill_match_percentage: float = 0.0
     experience_years: float | None = None

@@ -7,10 +7,12 @@ colocated with their consuming logic.
 
 from .evaluation import CANDIDATE_EVALUATION
 from .jd_extraction import EXTRACT_JD_DETAILS
+from .learning import LEARNING_RESOURCES
 from .resume_extraction import EXTRACT_CANDIDATE_DETAILS
 
 __all__ = [
     "EXTRACT_CANDIDATE_DETAILS",
     "EXTRACT_JD_DETAILS",
     "CANDIDATE_EVALUATION",
+    "LEARNING_RESOURCES",
 ]

@@ -10,7 +10,7 @@ from __future__ import annotations
 MAX_UPLOAD_MB: int = 10
 MAX_UPLOAD_BYTES: int = MAX_UPLOAD_MB * 1024 * 1024
 ALLOWED_CONTENT_TYPES: tuple[str, ...] = ("application/pdf",)
-ALLOWED_EXTENSIONS: tuple[str, ...] = (".pdf",)
+ALLOWED_EXTENSIONS: tuple[str, ...] = (".pdf", ".docx")
 
 # ===== Screening / evaluation =====
 SKILL_MATCH_THRESHOLD_PERCENT: float = 50.0

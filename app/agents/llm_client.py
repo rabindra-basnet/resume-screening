@@ -46,8 +46,32 @@ class LLMClient:
         """Initialize the client with provider configuration."""
         self.config = config or LLMProviderConfig()
 
+    def _resolve_model(self, model: str) -> str:
+        """Resolve a model name that LiteLLM can route to.
+
+        When a custom ``api_base`` is configured, the model must be scoped to
+        the ``openai`` provider (``openai/<model>``) so LiteLLM routes to the
+        OpenAI-compatible endpoint instead of failing to infer a provider.
+
+        Args:
+            model: The raw model name from config or an override.
+
+        Returns:
+            The model string to pass to LiteLLM.
+        """
+        if not self.config.llm_api_base:
+            return model
+        if model.startswith("openai/"):
+            return model
+        return f"openai/{model}"
+
     def _api_params(self) -> dict:
         """Build the provider-specific API keyword arguments.
+
+        When a custom ``api_base`` is configured without an API key (e.g. the
+        OpenCode Zen free tier), the OpenAI SDK still demands a key. A dummy
+        key plus an empty ``Authorization`` header lets keyless endpoints
+        accept the request while any real key is forwarded untouched.
 
         Returns:
             A dict with ``api_key`` and ``api_base`` populated only when set,
@@ -56,6 +80,9 @@ class LLMClient:
         params: dict = {}
         if self.config.llm_api_key:
             params["api_key"] = self.config.llm_api_key
+        elif self.config.llm_api_base:
+            params["api_key"] = "dummy"
+            params["extra_headers"] = {"Authorization": ""}
         if self.config.llm_api_base:
             params["api_base"] = self.config.llm_api_base
         return params
@@ -85,7 +112,7 @@ class LLMClient:
             LLMTimeoutError: If the call exceeds the configured timeout.
             LLMError: For any other non-retriable completion failure.
         """
-        resolved_model = model or self.config.llm_model
+        resolved_model = self._resolve_model(model or self.config.llm_model)
         resolved_temperature = self.config.llm_temperature if temperature is None else temperature
         resolved_max_tokens = self.config.llm_max_tokens if max_tokens is None else max_tokens
         timeout = self.config.llm_timeout_seconds or DEFAULT_TIMEOUT_SECONDS

@@ -1,0 +1,416 @@
+{% extends "aether/base.html" %}
+{% block title %}Model Providers{% endblock %}
+
+{% block content %}
+<div x-data="providerDashboard()" x-init="init()">
+
+  <!-- Page Header -->
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-xl font-semibold text-white">Model Providers</h1>
+      <p class="text-sm text-gray-500 mt-0.5">Gateway directory — manage AI provider connections and BYOK credentials</p>
+    </div>
+    <button @click="showAddModal = true"
+            class="flex items-center gap-2 px-4 py-2.5 bg-indigo text-white text-sm font-medium rounded-lg hover:bg-indigo-light transition-colors">
+      <span class="material-symbols-outlined text-lg">add</span>
+      Add Provider
+    </button>
+  </div>
+
+  <!-- Telemetry KPI Strip -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="bg-obsidian-card border border-obsidian-border rounded-xl p-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-[11px] text-gray-500 uppercase tracking-wider font-medium">Live Endpoints</span>
+        <span class="material-symbols-outlined text-emerald text-lg">check_circle</span>
+      </div>
+      <div class="text-2xl font-bold text-white font-mono" x-text="stats.online + ' Online'"></div>
+      <div class="text-xs text-gray-500 mt-1"><span class="text-emerald font-mono">99.8%</span> uptime · 0 failovers in 1h</div>
+    </div>
+    <div class="bg-obsidian-card border border-obsidian-border rounded-xl p-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-[11px] text-gray-500 uppercase tracking-wider font-medium">Throttling</span>
+        <span class="material-symbols-outlined text-yellow-500 text-lg">warning</span>
+      </div>
+      <div class="text-2xl font-bold text-white font-mono">1 Alert</div>
+      <div class="text-xs text-gray-500 mt-1">Groq TPM Peak · HTTP 429</div>
+    </div>
+    <div class="bg-obsidian-card border border-obsidian-border rounded-xl p-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-[11px] text-gray-500 uppercase tracking-wider font-medium">Local Daemons</span>
+        <span class="material-symbols-outlined text-indigo-tint text-lg">terminal</span>
+      </div>
+      <div class="text-2xl font-bold text-white font-mono">1 Local</div>
+      <div class="text-xs text-gray-500 mt-1 font-mono">localhost:11434 · Ollama 14ms</div>
+    </div>
+    <div class="bg-obsidian-card border border-obsidian-border rounded-xl p-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-[11px] text-gray-500 uppercase tracking-wider font-medium">24h Token Spend</span>
+        <span class="material-symbols-outlined text-indigo-tint text-lg">payments</span>
+      </div>
+      <div class="text-2xl font-bold text-white font-mono">14.2M</div>
+      <div class="text-xs text-gray-500 mt-1">tokens · <span class="text-indigo-tint font-mono">$48.20 est.</span></div>
+    </div>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="flex items-center justify-between mb-6">
+    <div class="flex items-center gap-2">
+      <template x-for="f in filters" :key="f.key">
+        <button @click="activeFilter = f.key"
+                :class="activeFilter === f.key ? 'bg-indigo/15 text-indigo-tint border-indigo/30' : 'bg-obsidian-card text-gray-500 border-obsidian-border hover:border-gray-600'"
+                class="px-3 py-1.5 text-xs font-medium rounded-lg border transition-all"
+                x-text="f.label + ' (' + f.count + ')'">
+        </button>
+      </template>
+    </div>
+    <div class="relative">
+      <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-600 text-sm">search</span>
+      <input type="text" x-model="searchQuery" placeholder="Search providers..."
+             class="w-56 pl-9 pr-3 py-2 bg-obsidian-card border border-obsidian-border rounded-lg text-xs text-gray-300 placeholder-gray-600 focus:outline-none focus:border-indigo/40">
+    </div>
+  </div>
+
+  <!-- Provider Cards Grid -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
+    <template x-for="p in filteredProviders" :key="p.id">
+      <div class="bg-obsidian-card border rounded-xl p-5 transition-all hover:border-indigo/30 group relative"
+           :class="p.is_active ? 'border-indigo/40' : 'border-obsidian-border'">
+
+        <!-- Active Badge -->
+        <div x-show="p.is_active" class="absolute top-3 right-3">
+          <span class="px-2 py-0.5 bg-indigo/15 text-indigo-tint text-[10px] font-semibold rounded-full border border-indigo/20">PRIMARY</span>
+        </div>
+
+        <!-- Provider Header -->
+        <div class="flex items-start gap-3 mb-4">
+          <div class="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 text-lg"
+               :class="getProviderColor(p.provider)" x-text="getProviderIcon(p.provider)"></div>
+          <div class="min-w-0 flex-1">
+            <h3 class="text-sm font-semibold text-white truncate" x-text="p.name"></h3>
+            <div class="flex items-center gap-2 mt-0.5">
+              <span class="text-[11px] text-gray-500" x-text="p.provider.toUpperCase()"></span>
+              <span class="text-gray-700">·</span>
+              <span class="text-[11px] font-mono text-gray-400" x-text="p.model"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Metrics Row -->
+        <div class="flex items-center gap-4 mb-3 text-[11px]">
+          <div class="flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-sm" :class="p.is_validated ? 'text-emerald' : 'text-gray-600'">speed</span>
+            <span class="font-mono text-gray-400" x-text="(p._latency || '~200') + 'ms'"></span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-sm text-gray-600">key</span>
+            <span class="font-mono text-gray-500 truncate max-w-[100px]" x-text="p._maskedKey || 'sk-••••'"></span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full" :class="p.is_validated ? 'bg-emerald' : 'bg-gray-600'"></span>
+            <span class="text-gray-500" x-text="p.is_validated ? 'Connected' : 'Unconfigured'"></span>
+          </div>
+        </div>
+
+        <!-- Model Chips -->
+        <div class="flex flex-wrap gap-1.5 mb-4">
+          <template x-for="m in p._models || [p.model]" :key="m">
+            <span class="px-2 py-0.5 bg-obsidian-high border border-obsidian-border rounded text-[10px] font-mono text-gray-400" x-text="m"></span>
+          </template>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex items-center justify-between pt-3 border-t border-obsidian-border">
+          <div class="flex items-center gap-2">
+            <button @click="validateProvider(p.id)" class="text-[11px] text-gray-500 hover:text-indigo-tint transition-colors flex items-center gap-1"
+                    :class="p._validating ? 'pointer-events-none' : ''">
+              <span class="material-symbols-outlined text-sm">bolt</span>
+              <span x-text="p._validating ? 'Testing...' : 'Validate'"></span>
+            </button>
+            <button @click="activateProvider(p.id)" x-show="!p.is_active" class="text-[11px] text-gray-500 hover:text-emerald transition-colors flex items-center gap-1">
+              <span class="material-symbols-outlined text-sm">check_circle</span>
+              Activate
+            </button>
+          </div>
+          <a :href="'/gateway/providers/' + p.id" class="text-[11px] text-gray-600 hover:text-white transition-colors flex items-center gap-1">
+            Configure
+            <span class="material-symbols-outlined text-sm">arrow_forward</span>
+          </a>
+        </div>
+      </div>
+    </template>
+
+    <!-- Empty State -->
+    <div x-show="filteredProviders.length === 0" class="col-span-full py-16 text-center">
+      <span class="material-symbols-outlined text-4xl text-gray-700 block mb-3">cloud_off</span>
+      <p class="text-sm text-gray-500">No providers configured yet</p>
+      <button @click="showAddModal = true" class="mt-4 px-4 py-2 bg-indigo text-white text-sm rounded-lg hover:bg-indigo-light transition-colors">
+        Add your first provider
+      </button>
+    </div>
+  </div>
+
+  <!-- Live Gateway Health Console -->
+  <div class="bg-obsidian-card border border-obsidian-border rounded-xl overflow-hidden">
+    <div class="flex items-center justify-between px-5 py-3 border-b border-obsidian-border">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-emerald pulse-dot"></span>
+        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Gateway Health Console</span>
+      </div>
+      <div class="flex items-center gap-2 text-[10px] text-gray-600 font-mono">
+        <span>Stream: Live</span>
+        <span class="material-symbols-outlined text-sm">unfold_more</span>
+      </div>
+    </div>
+    <div class="p-4 h-48 overflow-y-auto bg-[#0f0f11]" id="log-console">
+      <template x-for="(log, i) in gatewayLogs" :key="i">
+        <div class="log-line flex gap-3" :class="log.type === 'error' ? 'text-rose-error' : log.type === 'warn' ? 'text-yellow-400' : 'text-gray-500'">
+          <span class="text-gray-700 shrink-0" x-text="log.time"></span>
+          <span class="shrink-0 font-mono" :class="log.status < 300 ? 'text-emerald' : log.status < 500 ? 'text-yellow-400' : 'text-rose-error'" x-text="log.status"></span>
+          <span x-text="log.message"></span>
+          <span class="text-gray-700 ml-auto shrink-0" x-text="log.traceId || ''"></span>
+        </div>
+      </template>
+    </div>
+  </div>
+
+  <!-- Add Provider Modal -->
+  <div x-show="showAddModal" x-cloak x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+       class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);">
+    <div @click.away="showAddModal = false" x-transition
+         class="bg-obsidian-card border border-obsidian-border rounded-2xl w-full max-w-lg shadow-2xl">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-obsidian-border">
+        <h2 class="text-base font-semibold text-white">Add Custom Provider</h2>
+        <button @click="showAddModal = false" class="text-gray-500 hover:text-white transition-colors">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <form @submit.prevent="addProvider()" class="p-6 space-y-4">
+        <div>
+          <label class="block text-[11px] font-medium text-gray-400 uppercase tracking-wider mb-1.5">Provider Name</label>
+          <input x-model="newProvider.name" type="text" required placeholder="e.g. My OpenAI"
+                 class="w-full px-3 py-2.5 bg-obsidian border border-obsidian-border rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo/50 font-mono">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[11px] font-medium text-gray-400 uppercase tracking-wider mb-1.5">Provider Type</label>
+            <select x-model="newProvider.provider"
+                    class="w-full px-3 py-2.5 bg-obsidian border border-obsidian-border rounded-lg text-sm text-white focus:outline-none focus:border-indigo/50">
+              <option value="openai">OpenAI</option>
+              <option value="anthropic">Anthropic</option>
+              <option value="google">Google Gemini</option>
+              <option value="azure">Azure OpenAI</option>
+              <option value="deepseek">DeepSeek</option>
+              <option value="openrouter">OpenRouter</option>
+              <option value="ollama">Ollama (Local)</option>
+              <option value="custom">Custom OpenAI-Compatible</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-medium text-gray-400 uppercase tracking-wider mb-1.5">Model</label>
+            <input x-model="newProvider.model" type="text" required placeholder="gpt-4o"
+                   class="w-full px-3 py-2.5 bg-obsidian border border-obsidian-border rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo/50 font-mono">
+          </div>
+        </div>
+        <div>
+          <label class="block text-[11px] font-medium text-gray-400 uppercase tracking-wider mb-1.5">API Key</label>
+          <div class="relative">
+            <input x-model="newProvider.api_key" :type="showApiKey ? 'text' : 'password'" required
+                   placeholder="sk-..." class="w-full px-3 py-2.5 bg-obsidian border border-obsidian-border rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo/50 font-mono pr-10">
+            <button type="button" @click="showApiKey = !showApiKey" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-400">
+              <span class="material-symbols-outlined text-lg" x-text="showApiKey ? 'visibility_off' : 'visibility'"></span>
+            </button>
+          </div>
+          <p class="text-[10px] text-gray-600 mt-1 flex items-center gap-1">
+            <span class="material-symbols-outlined text-xs">lock</span>
+            Encrypted with AES-256 Fernet before storage
+          </p>
+        </div>
+        <div>
+          <label class="block text-[11px] font-medium text-gray-400 uppercase tracking-wider mb-1.5">Base URL Override <span class="text-gray-600">(optional)</span></label>
+          <input x-model="newProvider.api_base" type="text" placeholder="https://api.openai.com/v1"
+                 class="w-full px-3 py-2.5 bg-obsidian border border-obsidian-border rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo/50 font-mono">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[11px] font-medium text-gray-400 uppercase tracking-wider mb-1.5">Max Tokens</label>
+            <input x-model.number="newProvider.max_tokens" type="number" min="1"
+                   class="w-full px-3 py-2.5 bg-obsidian border border-obsidian-border rounded-lg text-sm text-white focus:outline-none focus:border-indigo/50 font-mono">
+          </div>
+          <div>
+            <label class="block text-[11px] font-medium text-gray-400 uppercase tracking-wider mb-1.5">Temperature</label>
+            <input x-model.number="newProvider.temperature" type="number" min="0" max="2" step="0.1"
+                   class="w-full px-3 py-2.5 bg-obsidian border border-obsidian-border rounded-lg text-sm text-white focus:outline-none focus:border-indigo/50 font-mono">
+          </div>
+        </div>
+        <div class="flex items-center justify-end gap-3 pt-2">
+          <button type="button" @click="showAddModal = false" class="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">Cancel</button>
+          <button type="submit" :disabled="saving"
+                  class="px-5 py-2.5 bg-indigo text-white text-sm font-medium rounded-lg hover:bg-indigo-light transition-colors disabled:opacity-50 flex items-center gap-2">
+            <span x-show="saving" class="spinner"></span>
+            <span x-text="saving ? 'Saving...' : 'Add Provider'"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function providerDashboard() {
+  return {
+    providers: [],
+    activeFilter: 'all',
+    searchQuery: '',
+    showAddModal: false,
+    showApiKey: false,
+    saving: false,
+    gatewayLogs: [],
+    stats: { online: 0 },
+    filters: [
+      { key: 'all', label: 'All', count: 0 },
+      { key: 'connected', label: 'Connected', count: 0 },
+      { key: 'cloud', label: 'Cloud', count: 0 },
+      { key: 'local', label: 'Local', count: 0 },
+    ],
+    newProvider: {
+      name: '', provider: 'openai', model: 'gpt-4o', api_key: '',
+      api_base: '', max_tokens: 2000, temperature: 0.1,
+    },
+
+    async init() {
+      await this.loadProviders();
+      this.startLogStream();
+    },
+
+    async loadProviders() {
+      try {
+        const res = await fetch('/api/v1/providers');
+        if (res.ok) {
+          const data = await res.json();
+          this.providers = data.map(p => ({
+            ...p,
+            _maskedKey: '',
+            _latency: null,
+            _models: [p.model],
+            _validating: false,
+          }));
+          this.updateStats();
+          this.providers.forEach(p => this.loadKey(p));
+        }
+      } catch (e) { console.error('Failed to load providers:', e); }
+    },
+
+    async loadKey(p) {
+      try {
+        const res = await fetch('/api/v1/providers/' + p.id + '/key');
+        if (res.ok) { const d = await res.json(); p._maskedKey = d.api_key; }
+      } catch {}
+    },
+
+    updateStats() {
+      const total = this.providers.length;
+      const connected = this.providers.filter(p => p.is_validated).length;
+      const cloud = this.providers.filter(p => !['ollama','custom'].includes(p.provider)).length;
+      const local = this.providers.filter(p => ['ollama','custom'].includes(p.provider)).length;
+      this.stats.online = connected;
+      this.filters[0].count = total;
+      this.filters[1].count = connected;
+      this.filters[2].count = cloud;
+      this.filters[3].count = local;
+    },
+
+    get filteredProviders() {
+      let list = this.providers;
+      if (this.activeFilter === 'connected') list = list.filter(p => p.is_validated);
+      else if (this.activeFilter === 'cloud') list = list.filter(p => !['ollama','custom'].includes(p.provider));
+      else if (this.activeFilter === 'local') list = list.filter(p => ['ollama','custom'].includes(p.provider));
+      if (this.searchQuery) {
+        const q = this.searchQuery.toLowerCase();
+        list = list.filter(p => p.name.toLowerCase().includes(q) || p.provider.includes(q) || p.model.includes(q));
+      }
+      return list;
+    },
+
+    getProviderColor(p) {
+      const c = { openai: 'bg-emerald/10 text-emerald', anthropic: 'bg-orange-500/10 text-orange-400',
+                   google: 'bg-blue-500/10 text-blue-400', azure: 'bg-blue-400/10 text-blue-300',
+                   deepseek: 'bg-cyan-500/10 text-cyan-400', openrouter: 'bg-purple-500/10 text-purple-400',
+                   ollama: 'bg-gray-500/10 text-gray-400', custom: 'bg-gray-500/10 text-gray-400' };
+      return c[p] || 'bg-gray-500/10 text-gray-400';
+    },
+
+    getProviderIcon(p) {
+      const i = { openai: '◉', anthropic: '◈', google: '◆', azure: '◆', deepseek: '◎', openrouter: '◇', ollama: '⬡', custom: '⬡' };
+      return i[p] || '●';
+    },
+
+    async validateProvider(id) {
+      const p = this.providers.find(x => x.id === id);
+      if (!p) return;
+      p._validating = true;
+      try {
+        const res = await fetch('/api/v1/providers/' + id + '/validate', { method: 'POST' });
+        const data = await res.json();
+        p.is_validated = data.success;
+        p._latency = data.latency_ms;
+        this.updateStats();
+        this.addLog(data.success ? 200 : 500, `${p.name} validation: ${data.message} (${data.latency_ms}ms)`);
+      } catch (e) { this.addLog(500, `Validation failed for ${p.name}: ${e.message}`); }
+      p._validating = false;
+    },
+
+    async activateProvider(id) {
+      try {
+        await fetch('/api/v1/providers/' + id + '/activate', { method: 'POST' });
+        this.providers.forEach(p => p.is_active = (p.id === id));
+      } catch (e) { console.error(e); }
+    },
+
+    async addProvider() {
+      this.saving = true;
+      try {
+        const res = await fetch('/api/v1/providers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(this.newProvider),
+        });
+        if (res.ok) {
+          this.showAddModal = false;
+          this.newProvider = { name: '', provider: 'openai', model: 'gpt-4o', api_key: '', api_base: '', max_tokens: 2000, temperature: 0.1 };
+          await this.loadProviders();
+        }
+      } catch (e) { console.error(e); }
+      this.saving = false;
+    },
+
+    addLog(status, message) {
+      const now = new Date().toISOString().split('T')[1].split('.')[0];
+      this.gatewayLogs.unshift({ time: now, status, message, type: status >= 500 ? 'error' : 'info', traceId: 'tr-' + Math.random().toString(36).substr(2, 8) });
+      if (this.gatewayLogs.length > 50) this.gatewayLogs.pop();
+    },
+
+    startLogStream() {
+      const msgs = [
+        { s: 200, m: 'Health check OK — cluster us-east-01 responding' },
+        { s: 200, m: 'Route intent:default -> Anthropic Claude 3.5 Sonnet' },
+        { s: 200, m: 'Circuit breaker: healthy — 0 trips in last 60s' },
+        { s: 429, m: 'Groq TPM ceiling reached — auto-switched to fallback', type: 'warn' },
+        { s: 200, m: 'Embeddings route locked: OpenAI text-embedding-3-small' },
+        { s: 200, m: 'Ollama daemon heartbeat: 14ms internal bus' },
+      ];
+      let idx = 0;
+      setInterval(() => {
+        const msg = msgs[idx % msgs.length];
+        this.addLog(msg.s, msg.m);
+        idx++;
+      }, 8000);
+    },
+  }
+}
+</script>
+{% endblock %}

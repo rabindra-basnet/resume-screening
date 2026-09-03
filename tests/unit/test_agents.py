@@ -7,6 +7,7 @@ from app.agents.base import BaseAgent, StructuredOutputError
 from app.agents.evaluator import EvaluatorAgent
 from app.agents.resume_extractor import ResumeExtractorAgent
 from app.models.candidate import CandidateProfile
+from app.models.job_description import JobDescription
 from pydantic import BaseModel
 
 
@@ -77,3 +78,20 @@ def test_evaluator_overlays_deterministic_skill_match(sample_candidate, sample_j
     assert result.skill_match_percentage == 100.0
     assert "Python" in result.matched_skills
     assert result.reason == "Good fit"
+
+
+def test_evaluator_preserves_weak_skills_scoped_to_missing(
+    sample_candidate: CandidateProfile, sample_job: JobDescription
+) -> None:
+    """Weak skills are kept only when they are among the missing required skills."""
+    response = (
+        '{"candidate_status": "selected", "reason": "Good fit", '
+        '"matched_skills": [], "missing_skills": [], '
+        '"weak_skills": ["FastAPI", "NotARequiredSkill"]}'
+    )
+    agent = EvaluatorAgent(client=_FakeClient(response))
+    result = agent.run(sample_candidate, sample_job)
+    # sample_job requires Python, FastAPI, SQLAlchemy, PostgreSQL.
+    # sample_candidate weak list only overlaps with missing scope; all required
+    # skills are matched, so no missing entries remain -> weak_skills empty.
+    assert result.weak_skills == []

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Resume Screening{% endblock %}
+{% block content %}
+<h1>Agentic Resume Screening</h1>
+<p style="color: var(--text-secondary); margin-bottom: 2rem;">
+  AI-powered resume screening and candidate matching against job descriptions.
+</p>
+
+<div class="grid grid-2">
+  <a href="/jobs" class="card" style="text-decoration: none; display: block;">
+    <h2>Job Descriptions</h2>
+    <p style="color: var(--text-secondary); font-size: 0.875rem;">
+      Create and manage job descriptions for screening.
+    </p>
+  </a>
+  <a href="/screen" class="card" style="text-decoration: none; display: block;">
+    <h2>Screen Resume</h2>
+    <p style="color: var(--text-secondary); font-size: 0.875rem;">
+      Upload a resume and screen it against a job description.
+    </p>
+  </a>
+</div>
+
+<div class="card" style="margin-top: 1rem;">
+  <h2>API Health</h2>
+  <div id="health-status" style="font-size: 0.875rem; color: var(--text-secondary);">
+    Checking...
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  apiGet('/health').then(data => {
+    document.getElementById('health-status').innerHTML =
+      `<span style="color: var(--success);">●</span> ${data.app} — database: ${data.database}`;
+  }).catch(() => {
+    document.getElementById('health-status').innerHTML =
+      '<span style="color: var(--danger);">●</span> Service unavailable';
+  });
+</script>
+{% endblock %}

@@ -1,23 +1,17 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "fluid": true,
-  "builds": [
-    {
-      "src": "api/index.py",
-      "use": "@vercel/python",
-      "config": { "maxLambdaSize": "50mb" }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "api/index.py"
-    }
-  ],
   "functions": {
     "api/index.py": {
-      "maxDuration": 300,
-      "memory": 1024
+      "maxDuration": 300
     }
-  }
+  },
+  "routes": [
+    {
+      "src": "/static/(.*)",
+      "dest": "/static/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "api/index.py"
+    }
+  ]
 }

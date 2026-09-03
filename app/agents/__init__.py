@@ -8,6 +8,7 @@ evaluate candidates.
 from .base import BaseAgent, StructuredOutputError
 from .evaluator import EvaluatorAgent
 from .jd_extractor import JDGeneratorAgent
+from .learning_resource_agent import LearningResourceAgent, LearningResourcesResponse
 from .llm_client import LLMClient, LLMError, LLMTimeoutError
 from .orchestrator import AgentOrchestrator
 from .resume_extractor import ResumeExtractorAgent
@@ -21,5 +22,7 @@ __all__ = [
     "ResumeExtractorAgent",
     "JDGeneratorAgent",
     "EvaluatorAgent",
+    "LearningResourceAgent",
+    "LearningResourcesResponse",
     "AgentOrchestrator",
 ]

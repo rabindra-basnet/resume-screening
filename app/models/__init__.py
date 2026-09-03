@@ -8,7 +8,16 @@ every boundary prevents malformed data from propagating through the pipeline.
 from .api import HealthResponse, ScreeningRequest, ScreeningResponse
 from .candidate import CandidateProfile, Education, WorkExperience
 from .evaluation import EvaluationResult, SkillMatch
+from .external_job import ExternalJobPosting
 from .job_description import JobDescription, JobDescriptionCreate
+from .learning import LearningPlan, LearningResource, SkillGap
+from .provider import (
+    ProviderActivateResponse,
+    ProviderCreate,
+    ProviderRead,
+    ProviderUpdate,
+    ProviderValidateResponse,
+)
 
 __all__ = [
     "CandidateProfile",
@@ -21,4 +30,13 @@ __all__ = [
     "ScreeningRequest",
     "ScreeningResponse",
     "HealthResponse",
+    "SkillGap",
+    "LearningResource",
+    "LearningPlan",
+    "ExternalJobPosting",
+    "ProviderActivateResponse",
+    "ProviderCreate",
+    "ProviderRead",
+    "ProviderUpdate",
+    "ProviderValidateResponse",
 ]

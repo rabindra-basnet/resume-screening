@@ -24,6 +24,7 @@ def _isolate_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("LLM_PROVIDER", "openai")
     monkeypatch.setenv("LLM_MODEL", "gpt-4o-mini")
     monkeypatch.setenv("LLM_API_KEY", "test-key")
+    monkeypatch.setenv("DATABASE_URL", "sqlite+aiosqlite:///")
 
 
 @pytest.fixture

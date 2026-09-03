@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Job Descriptions{% endblock %}
+{% block content %}
+<h1>Job Descriptions</h1>
+
+<div class="card">
+  <h2>Create New Job Description</h2>
+  <form id="jd-form">
+    <div class="form-group">
+      <label for="title">Job Title</label>
+      <input type="text" id="title" name="title" required placeholder="e.g. Senior Software Engineer">
+    </div>
+    <div class="form-group">
+      <label for="raw_text">Job Description</label>
+      <textarea id="raw_text" name="raw_text" required placeholder="Paste the full job description here..."></textarea>
+    </div>
+    <button type="submit" class="btn-primary" id="submit-btn">Create</button>
+  </form>
+  <div id="jd-result" style="margin-top: 1rem;"></div>
+</div>
+
+<div class="card" style="margin-top: 1rem;">
+  <h2>View Job Description</h2>
+  <div class="form-group">
+    <label for="jd-id">Job Description ID</label>
+    <input type="text" id="jd-id" placeholder="Enter JD ID">
+  </div>
+  <button onclick="fetchJD()" class="btn-primary">Fetch</button>
+  <div id="jd-view" style="margin-top: 1rem;"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('jd-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Creating...';
+
+  try {
+    const data = await apiPost('/job-descriptions', {
+      title: document.getElementById('title').value,
+      raw_text: document.getElementById('raw_text').value,
+    });
+    document.getElementById('jd-result').innerHTML =
+      `<div class="card" style="border-color: var(--success);">
+        <p><strong>Created!</strong> ID: <code>${data.id}</code></p>
+        <p style="font-size: 0.875rem; color: var(--text-secondary); margin-top: 0.5rem;">
+          ${data.title || 'Untitled'} — ${data.skills?.length || 0} skills extracted
+        </p>
+       </div>`;
+    e.target.reset();
+  } catch (err) {
+    document.getElementById('jd-result').innerHTML =
+      `<p style="color: var(--danger);">Error: ${err.message}</p>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Create';
+  }
+});
+
+async function fetchJD() {
+  const id = document.getElementById('jd-id').value.trim();
+  if (!id) return;
+  const view = document.getElementById('jd-view');
+  view.innerHTML = '<div class="spinner"></div>';
+
+  try {
+    const data = await apiGet(`/job-descriptions/${id}`);
+    view.innerHTML = `
+      <div class="card">
+        <h2>${data.title || 'Untitled'}</h2>
+        <div class="meta-row"><span class="meta-label">ID</span><span>${data.id}</span></div>
+        ${data.min_work_experience ? `<div class="meta-row"><span class="meta-label">Min Experience</span><span>${data.min_work_experience} years</span></div>` : ''}
+        ${data.max_work_experience ? `<div class="meta-row"><span class="meta-label">Max Experience</span><span>${data.max_work_experience} years</span></div>` : ''}
+        <div style="margin-top: 0.75rem;">
+          <strong>Skills:</strong>
+          <div class="skill-list">
+            ${(data.skills || []).map(s => `<span class="skill-tag">${s}</span>`).join('')}
+          </div>
+        </div>
+        <div style="margin-top: 0.75rem;">
+          <strong>Raw Text:</strong>
+          <pre style="white-space: pre-wrap; font-size: 0.8rem; margin-top: 0.25rem; color: var(--text-secondary);">${data.raw_text}</pre>
+        </div>
+      </div>`;
+  } catch (err) {
+    view.innerHTML = `<p style="color: var(--danger);">Error: ${err.message}</p>`;
+  }
+}
+</script>
+{% endblock %}

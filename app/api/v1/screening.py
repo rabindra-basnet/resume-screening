@@ -8,9 +8,9 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_screening_service, get_session
-from app.config.constants import MAX_UPLOAD_BYTES
+from app.config.constants import ALLOWED_EXTENSIONS, MAX_UPLOAD_BYTES
 from app.services import ScreeningService
-from app.tools import PDFParsingError
+from app.tools import DocumentParsingError
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +29,7 @@ async def screen_resume(
     """Run a full resume screening against a stored or inline job description.
 
     Args:
-        resume: The resume PDF file to screen.
+        resume: The resume file (PDF or DOCX) to screen.
         jd_id: Optional id of a stored job description.
         job_description: Optional inline job description text.
         model_override: Optional LLM model override.
@@ -37,14 +37,20 @@ async def screen_resume(
         service: The injected screening service.
 
     Returns:
-        A dict containing the candidate profile, evaluation, and metadata.
+        A dict containing the candidate profile, evaluation, learning plan,
+        and metadata.
 
     Raises:
         HTTPException: For validation errors, missing job context, or a
-            PDF parsing failure.
+            document parsing failure.
     """
-    if not resume.filename or not resume.filename.lower().endswith(".pdf"):
-        raise HTTPException(status_code=400, detail="Only PDF files are accepted")
+    filename = (resume.filename or "").strip()
+    ext = filename.lower().rsplit(".", 1)[-1] if "." in filename else ""
+    if f".{ext}" not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail="Only PDF (.pdf) and Word (.docx) files are accepted",
+        )
 
     content = await resume.read()
     if len(content) > MAX_UPLOAD_BYTES:
@@ -56,12 +62,12 @@ async def screen_resume(
     try:
         return await service.run_screening(
             content,
-            resume_filename=resume.filename,
+            resume_filename=filename,
             jd_id=jd_id,
             job_description=job_description,
             model_override=model_override,
         )
-    except PDFParsingError as exc:
+    except DocumentParsingError as exc:
         raise HTTPException(status_code=400, detail=exc.message) from exc
     except RuntimeError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Learning Center{% endblock %}
+{% block content %}
+<h1>Learning Center</h1>
+<p style="color: var(--text-secondary); margin-bottom: 1rem;">
+  Resources recommended to close skill gaps identified during resume screenings.
+</p>
+
+<div class="card">
+  <div class="form-group" style="display:flex; gap: 0.5rem; align-items:center;">
+    <input type="text" id="search" placeholder="Filter by skill or title...">
+    <button class="btn-primary" onclick="loadResources()">Search</button>
+  </div>
+</div>
+
+<div id="resources"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadResources() {
+  const container = document.getElementById('resources');
+  const q = document.getElementById('search').value.trim();
+  const query = q ? `?limit=200` : '';
+  container.innerHTML = '<div class="card"><div class="spinner"></div> Loading resources...</div>';
+  try {
+    const data = await apiGet('/learning' + query);
+    let resources = data.resources || [];
+    if (q) {
+      const needle = q.toLowerCase();
+      resources = resources.filter(r =>
+        (r.skill || '').toLowerCase().includes(needle) ||
+        (r.title || '').toLowerCase().includes(needle)
+      );
+    }
+    renderResources(resources);
+  } catch (err) {
+    container.innerHTML = `<div class="card" style="border-color: var(--danger);"><p style="color: var(--danger);">Error: ${err.message}</p></div>`;
+  }
+}
+
+function renderResources(resources) {
+  const container = document.getElementById('resources');
+  if (!resources.length) {
+    container.innerHTML = '<div class="empty-state">No learning resources yet. Run a screening to generate a learning plan.</div>';
+    return;
+  }
+  const bySkill = {};
+  resources.forEach(r => {
+    const key = r.skill || 'Other';
+    (bySkill[key] = bySkill[key] || []).push(r);
+  });
+  container.innerHTML = Object.entries(bySkill).map(([skill, rows]) => `
+    <div class="card">
+      <h2 style="margin-bottom: 0.75rem;">${skill} <span class="count-badge">${rows.length}</span></h2>
+      ${rows.map(r => `
+        <div class="resource-item">
+          <div>
+            <a href="${r.url || '#'}" target="_blank" rel="noopener noreferrer" class="resource-title" style="font-weight: 600;">${r.title}</a>
+            <div class="meta-label" style="font-size: 0.75rem; margin-top: 0.125rem;">
+              ${r.provider || ''}${r.estimated_hours ? ` · ~${r.estimated_hours}h` : ''}${r.resource_type ? ` · ${r.resource_type}` : ''}
+            </div>
+            ${r.description ? `<p style="font-size: 0.875rem; color: var(--text-secondary); margin-top: 0.25rem;">${r.description}</p>` : ''}
+          </div>
+          <span class="screening-id">${r.screening_id ? r.screening_id.slice(0, 8) : ''}</span>
+        </div>`).join('')}
+    </div>`).join('');
+}
+
+document.addEventListener('DOMContentLoaded', loadResources);
+</script>
+{% endblock %}

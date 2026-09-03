@@ -67,4 +67,15 @@ class EvaluatorAgent(BaseAgent[EvaluationResult]):
         result.matched_skills = matched
         result.missing_skills = missing
         result.skill_match_percentage = percentage
+
+        # Preserve the LLM's weak-skill detection: skills the candidate knows
+        # partially. Only keep ones that are genuinely among the missing
+        # required skills so the learning plan stays scoped to JD needs.
+        if result.weak_skills:
+            normalized_missing = {s.lower() for s in missing}
+            result.weak_skills = [
+                w for w in result.weak_skills if w.lower() in normalized_missing
+            ]
+        else:
+            result.weak_skills = []
         return result
