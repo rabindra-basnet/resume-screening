@@ -12,12 +12,13 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
+from fastapi.responses import FileResponse, HTMLResponse
 
 from app.api.v1 import (
+    account_router,
+    auth_router,
     external_jobs_router,
     health_router,
     jd_router,
@@ -30,7 +31,7 @@ from app.config.settings import get_settings
 from app.database import get_database
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+UI_DIST = BASE_DIR / "ui" / "dist"
 
 logger = logging.getLogger(__name__)
 
@@ -76,56 +77,41 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(health_router, prefix=API_V1_PREFIX)
+    app.include_router(auth_router, prefix=API_V1_PREFIX)
+    app.include_router(account_router, prefix=API_V1_PREFIX)
     app.include_router(jd_router, prefix=API_V1_PREFIX)
     app.include_router(screening_router, prefix=API_V1_PREFIX)
     app.include_router(providers_router, prefix=API_V1_PREFIX)
     app.include_router(learning_router, prefix=API_V1_PREFIX)
     app.include_router(external_jobs_router, prefix=API_V1_PREFIX)
 
-    app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+    # ── React SPA ──────────────────────────────────────────────────────
+    # Serve the built React app (ui/dist) as a single-page application.
+    # Handles static assets plus client-side routing fallback to index.html.
+    if UI_DIST.exists() and (UI_DIST / "index.html").is_file():
+        _index_html = (UI_DIST / "index.html").read_text(encoding="utf-8")
 
-    @app.get("/")
-    async def index(request: Request):
-        return templates.TemplateResponse(request, "index.html")
+        @app.get("/", include_in_schema=False)
+        async def spa_root() -> HTMLResponse:
+            return HTMLResponse(_index_html)
 
-    @app.get("/jobs")
-    async def jobs_page(request: Request):
-        return templates.TemplateResponse(request, "jobs.html")
+        @app.get("/{spa_path:path}", include_in_schema=False, response_model=None)
+        async def spa_fallback(spa_path: str):
+            # Serve existing static assets (js/css/fonts/icons).
+            target = UI_DIST / spa_path
+            if spa_path and target.is_file():
+                return FileResponse(target)
+            # Anything else returns index.html for the SPA's router.
+            return HTMLResponse(_index_html)
+    else:
+        logger.warning("React UI not built: %s. Run `npm run build` in ui/.", UI_DIST)
 
-    @app.get("/screen")
-    async def screen_page(request: Request):
-        return templates.TemplateResponse(request, "screen.html")
-
-    @app.get("/admin/learning")
-    async def admin_learning_page(request: Request):
-        return templates.TemplateResponse(request, "admin_learning.html")
-
-    # ── AetherGate Gateway UI ──────────────────────────────────────────
-    @app.get("/gateway/providers")
-    async def gateway_providers(request: Request):
-        return templates.TemplateResponse(
-            request, "aether/providers.html", {"active_page": "providers"}
-        )
-
-    @app.get("/gateway/providers/{provider_id}")
-    async def gateway_provider_detail(request: Request, provider_id: str):
-        return templates.TemplateResponse(
-            request,
-            "aether/provider_detail.html",
-            {"active_page": "providers", "provider_id": provider_id},
-        )
-
-    @app.get("/gateway/routing")
-    async def gateway_routing(request: Request):
-        return templates.TemplateResponse(
-            request, "aether/routing.html", {"active_page": "routing"}
-        )
-
-    @app.get("/gateway/vault")
-    async def gateway_vault(request: Request):
-        return templates.TemplateResponse(
-            request, "aether/vault.html", {"active_page": "vault"}
-        )
+        @app.get("/", include_in_schema=False)
+        async def placeholder_root() -> HTMLResponse:
+            return HTMLResponse(
+                "<h1>Resume Screening API</h1><p>React UI not built. "
+                "Run <code>npm run build</code> in <code>ui/</code>.</p>"
+            )
 
     return app
 

@@ -25,6 +25,9 @@ from pypdf import PdfWriter
 from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.deps import get_current_user, get_screening_service, get_session
+from app.database.schema import UserModel
+
 
 def _make_minimal_pdf(text: str = "Hello Resume") -> bytes:
     """Generate a valid single-page PDF containing ``text`` using pypdf."""
@@ -74,8 +77,6 @@ async def client(db):
     """Build a test ASGI client with a screening service bound to fake agents."""
     app = create_app()
 
-    from app.api.deps import get_screening_service, get_session
-
     def _build_fake_service(
         session: AsyncSession = Depends(get_session),
     ) -> ScreeningService:
@@ -102,6 +103,16 @@ async def client(db):
 
     app.dependency_overrides[get_session] = lambda: db.session()
     app.dependency_overrides[get_screening_service] = _build_fake_service
+
+    # Mock authenticated user for screening tests.
+    _fake_user = UserModel(
+        id="test-user-id",
+        email="test@example.com",
+        name="Test User",
+        avatar_url=None,
+        google_id="fake-google-id",
+    )
+    app.dependency_overrides[get_current_user] = lambda: _fake_user
 
     transport = httpx.ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as test_client:

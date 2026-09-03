@@ -1,0 +1,7 @@
+node_modules
+*.local
+.DS_Store
+
+# The built SPA (ui/dist) is committed so the FastAPI backend / Vercel
+# single-deploy can serve it at runtime without a separate build step.
+# (un-ignored: dist)

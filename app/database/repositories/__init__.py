@@ -8,5 +8,12 @@ from .jd_repository import JDRepository
 from .learning_repository import LearningRepository
 from .provider_repository import ProviderRepository
 from .resume_repository import ResumeRepository
+from .user_repository import UserRepository
 
-__all__ = ["JDRepository", "LearningRepository", "ProviderRepository", "ResumeRepository"]
+__all__ = [
+    "JDRepository",
+    "LearningRepository",
+    "ProviderRepository",
+    "ResumeRepository",
+    "UserRepository",
+]

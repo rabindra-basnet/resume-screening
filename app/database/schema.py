@@ -52,13 +52,37 @@ class JobDescriptionModel(Base):
     )
 
 
+class UserModel(Base):
+    """ORM model representing an authenticated user (Google OAuth).
+
+    Attributes:
+        id: Primary key (UUID string).
+        email: User email from Google.
+        name: Display name from Google.
+        avatar_url: Profile picture URL from Google.
+        google_id: Google OAuth subject ID.
+        created_at: Row creation timestamp.
+    """
+
+    __tablename__ = "users"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    avatar_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+    google_id: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class ScreeningResultModel(Base):
     """ORM model representing a completed candidate screening.
 
     Attributes:
         id: Primary key (UUID string).
+        user_id: Owner of this screening result.
         jd_id: Foreign key to an optional stored job description.
         resume_filename: Original name of the uploaded resume file.
+        resume_blob_url: Vercel Blob URL of the stored resume document.
         resume_text: Extracted text from the resume.
         candidate_profile: JSON blob of the extracted candidate profile.
         evaluation: JSON blob of the evaluation result.
@@ -72,8 +96,10 @@ class ScreeningResultModel(Base):
     __tablename__ = "screening_results"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
     jd_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     resume_filename: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    resume_blob_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
     resume_text: Mapped[str] = mapped_column(Text, nullable=False)
     candidate_profile: Mapped[dict] = mapped_column(JSON, default=dict)
     evaluation: Mapped[dict] = mapped_column(JSON, default=dict)

@@ -37,6 +37,8 @@ class ResumeRepository:
         llm_model_used: str | None = None,
         processing_time_ms: int | None = None,
         jd_id: str | None = None,
+        user_id: str | None = None,
+        resume_blob_url: str | None = None,
     ) -> ScreeningResultModel:
         """Persist a new screening result.
 
@@ -50,6 +52,8 @@ class ResumeRepository:
             llm_model_used: Optional model used for the evaluation.
             processing_time_ms: Optional end-to-end processing time.
             jd_id: Optional referenced job description id.
+            user_id: Optional owner user id.
+            resume_blob_url: Optional URL of the stored resume document.
 
         Returns:
             The persisted :class:`ScreeningResultModel`.
@@ -64,6 +68,8 @@ class ResumeRepository:
             llm_model_used=llm_model_used,
             processing_time_ms=processing_time_ms,
             jd_id=jd_id,
+            user_id=user_id,
+            resume_blob_url=resume_blob_url,
         )
         self.session.add(row)
         await self.session.commit()
@@ -81,7 +87,7 @@ class ResumeRepository:
         """
         return await self.session.get(ScreeningResultModel, result_id)
 
-    async def list(self, limit: int = 50) -> list[ScreeningResultModel]:
+    async def list_all(self, limit: int = 50) -> list[ScreeningResultModel]:
         """Return the most recent screening results.
 
         Args:
@@ -92,6 +98,27 @@ class ResumeRepository:
         """
         stmt = (
             select(ScreeningResultModel)
+            .order_by(ScreeningResultModel.created_at.desc())
+            .limit(limit)
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def list_by_user(
+        self, user_id: str, *, limit: int = 50
+    ) -> list[ScreeningResultModel]:
+        """Return screening results owned by a specific user.
+
+        Args:
+            user_id: The owner's user ID.
+            limit: Maximum number of rows to return.
+
+        Returns:
+            A list of screening result rows, newest first.
+        """
+        stmt = (
+            select(ScreeningResultModel)
+            .where(ScreeningResultModel.user_id == user_id)
             .order_by(ScreeningResultModel.created_at.desc())
             .limit(limit)
         )

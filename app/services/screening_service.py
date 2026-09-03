@@ -79,6 +79,7 @@ class ScreeningService:
         job_description: str | None = None,
         jd_id: str | None = None,
         model_override: str | None = None,
+        user_id: str | None = None,
     ) -> dict:
         """Run a full screening for a resume against a job description.
 
@@ -90,6 +91,7 @@ class ScreeningService:
                 omitted, the JD is loaded from storage via ``jd_id``.
             jd_id: Optional id of a stored job description to load.
             model_override: Optional LLM model override for the pipeline.
+            user_id: Optional owner user ID (for blob storage and ownership).
 
         Returns:
             A serializable dict containing the candidate, job, evaluation,
@@ -100,6 +102,9 @@ class ScreeningService:
             RuntimeError: If no job description can be resolved.
         """
         started = time.monotonic()
+
+        # Upload the original document to configured storage backend.
+        blob_url = await self._upload_document(resume_bytes, resume_filename, user_id)
 
         referenced_jd_id = jd_id
         resume_text = self.document_parser.extract_text(resume_bytes, resume_filename)
@@ -133,6 +138,8 @@ class ScreeningService:
             llm_model_used=self._resolved_model(model_override),
             processing_time_ms=elapsed_ms,
             jd_id=referenced_jd_id,
+            user_id=user_id,
+            resume_blob_url=blob_url,
         )
 
         # Build and persist a learning plan from any skill gaps identified.
@@ -197,7 +204,7 @@ class ScreeningService:
         """
         if model_override:
             return model_override
-        return get_settings().llm.llm_model
+        return get_settings().llm_model
 
     async def _resolve_provider_config(self) -> LLMProviderConfig | None:
         """Check for an active user-configured provider (BYOK).
@@ -244,3 +251,23 @@ class ScreeningService:
             jd_extractor=JDGeneratorAgent(client=client),
             evaluator=EvaluatorAgent(client=client),
         )
+
+    @staticmethod
+    async def _upload_document(
+        file_bytes: bytes, filename: str, user_id: str | None
+    ) -> str | None:
+        """Upload the resume document to the configured storage backend.
+
+        Args:
+            file_bytes: Raw file content.
+            filename: Original filename.
+            user_id: Owner's user ID (used as path prefix).
+
+        Returns:
+            A URL string, or ``None`` if storage is disabled or upload fails.
+        """
+        from app.services.storage import upload_resume
+
+        if not user_id:
+            return None
+        return await upload_resume(file_bytes, filename=filename, user_id=user_id)
