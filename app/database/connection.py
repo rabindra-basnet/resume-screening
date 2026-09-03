@@ -36,6 +36,11 @@ class Database:
         # SQLite requires aiosqlite driver; normalize the URL safely.
         if url.startswith("sqlite://"):
             url = url.replace("sqlite:///", "sqlite+aiosqlite:///")
+        # Postgres needs an async driver; map `postgresql://` to asyncpg.
+        if url.startswith("postgresql://"):
+            url = "postgresql+asyncpg://" + url[len("postgresql://"):]
+        elif url.startswith("postgres://"):
+            url = "postgresql+asyncpg://" + url[len("postgres://"):]
         connect_args: dict = {}
         if "sqlite" in url:
             connect_args = {"check_same_thread": False}
