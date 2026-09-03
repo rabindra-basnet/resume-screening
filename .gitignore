@@ -9,7 +9,6 @@ __pycache__/
 *.py[oc]
 build/
 dist/
-!ui/dist/
 wheels/
 *.egg-info
 .egg/

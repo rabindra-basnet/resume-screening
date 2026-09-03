@@ -74,7 +74,7 @@ class Settings(BaseSettings):
 
     # ── Session ────────────────────────────────────────────────────────
     session_secret: str = Field(default="", alias="session_secret")  # noqa: S105
-    session_cookie_name: str = "session"
+    session_cookie_name: str = "aether_session"
     session_cookie_max_age: int = 7 * 24 * 60 * 60  # 7 days
 
     # ── Storage (switchable) ───────────────────────────────────────────

@@ -15,6 +15,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
+from starlette.middleware.sessions import SessionMiddleware
 
 from app.api.v1 import (
     account_router,
@@ -74,6 +75,14 @@ def create_app() -> FastAPI:
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+    )
+
+    app.add_middleware(
+        SessionMiddleware,
+        secret_key=settings.session_secret,
+        session_cookie=settings.session_cookie_name,
+        max_age=settings.session_cookie_max_age,
+        same_site="lax",
     )
 
     app.include_router(health_router, prefix=API_V1_PREFIX)
