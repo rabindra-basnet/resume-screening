@@ -2,59 +2,24 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { apiGet, errMsg } from "../lib/api";
 import type { HealthResponse } from "../lib/types";
-import {
-  Briefcase,
-  Upload,
-  GraduationCap,
-  ShieldCheck,
-  Cpu,
-  FileSearch,
-  Sparkles,
-  ArrowRight,
-} from "lucide-react";
+import { Upload, ArrowRight, FileText, TrendingUp } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 
-const features = [
+const steps = [
   {
-    to: "/screen",
-    title: "Screen Resume",
-    desc: "Upload a resume and get an AI evaluation against a job description.",
-    icon: Upload,
+    n: "01",
+    title: "Paste the job",
+    desc: "Drop the job description in. If it's saved, pick it from the list.",
   },
   {
-    to: "/jobs",
-    title: "Job Descriptions",
-    desc: "Create, store, and manage job descriptions for reuse.",
-    icon: Briefcase,
+    n: "02",
+    title: "Upload a resume",
+    desc: "PDF or DOCX. The parser pulls out profile, skills, and work history.",
   },
   {
-    to: "/learning",
-    title: "Learning Center",
-    desc: "Get personalized resources to close your skill gaps.",
-    icon: GraduationCap,
-  },
-];
-
-const highlights = [
-  {
-    icon: FileSearch,
-    title: "Smart Parsing",
-    desc: "Automatically extracts candidate profile, skills, and experience from PDF or DOCX resumes.",
-  },
-  {
-    icon: Cpu,
-    title: "Multi-Model AI",
-    desc: "Powered by a configurable multi-provider LLM gateway with your own keys (BYOK).",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Private & Secure",
-    desc: "Your documents are stored in encrypted private storage, accessible only to you.",
-  },
-  {
-    icon: Sparkles,
-    title: "Skill Gap Analysis",
-    desc: "Identifies missing and weak skills, then recommends a tailored learning plan.",
+    n: "03",
+    title: "Get a match read",
+    desc: "A score, the skills that line up, the ones that don't, and what's missing.",
   },
 ];
 
@@ -77,123 +42,131 @@ export default function Home() {
 
   return (
     <div className="fade-in">
-      {/* ── Hero ─────────────────────────────────────────────── */}
+      {/* Hero */}
       <section className="mb-12">
-        <span
-          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium mb-4"
-          style={{
-            background: "var(--color-brand-soft)",
-            color: "var(--color-brand)",
-          }}
-        >
-          <Sparkles size={13} />
-          AI-powered candidate screening
-        </span>
         <h1
           className="text-4xl md:text-5xl font-bold leading-tight mb-4"
           style={{ color: "var(--color-text)" }}
         >
-          Find the right candidate,
+          Does this resume actually
           <br />
-          <span style={{ color: "var(--color-brand)" }}>in seconds.</span>
+          fit the job you're hiring for?
+          <span style={{ color: "var(--color-brand)" }}>.</span>
         </h1>
         <p className="text-lg max-w-2xl mb-6" style={{ color: "var(--color-text-muted)" }}>
-          Agentic Resume Screening parses resumes, matches them against job
-          descriptions, and surfaces missing skills with personalized learning
-          plans — automatically.
+          Paste a job description, upload a resume, and get a straight answer:
+          a match score, the experience that carries the candidate, the gaps
+          that would show up in the interview, and what to ask to find out.
         </p>
         <div className="flex flex-wrap gap-3">
           {user ? (
             <Link
               to="/screen"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium no-underline"
-              style={{
-                background: "var(--color-brand)",
-                color: "#fff",
-              }}
+              style={{ background: "var(--color-brand)", color: "#fff" }}
             >
-              Screen a resume now
+              Screen a resume
               <ArrowRight size={16} />
             </Link>
           ) : (
             <Link
               to="/login"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium no-underline"
-              style={{
-                background: "var(--color-brand)",
-                color: "#fff",
-              }}
+              style={{ background: "var(--color-brand)", color: "#fff" }}
             >
-              Get started
+              Sign in with Google
               <ArrowRight size={16} />
             </Link>
           )}
-          <Link
-            to="/screen"
-            className="px-5 py-2.5 rounded-lg font-medium no-underline"
-            style={{
-              background: "var(--color-brand-soft)",
-              color: "var(--color-brand)",
-            }}
-          >
-            Try the demo
-          </Link>
         </div>
+        <p className="text-sm mt-4" style={{ color: "var(--color-text-muted)" }}>
+          No credit card, no setup. Just a Google account.
+        </p>
       </section>
 
-      {/* ── Feature cards ────────────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-12">
-        {features.map((s) => (
-          <Link
-            key={s.to}
-            to={s.to}
-            className="panel no-underline hover:shadow-md transition-shadow"
-          >
-            <span
-              className="w-11 h-11 rounded-lg flex items-center justify-center mb-3"
-              style={{ background: "var(--color-brand-soft)" }}
-            >
-              <s.icon size={22} style={{ color: "var(--color-brand)" }} />
-            </span>
-            <h2 className="text-base font-semibold mb-1" style={{ color: "var(--color-text)" }}>
-              {s.title}
-            </h2>
-            <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
-              {s.desc}
-            </p>
-          </Link>
-        ))}
-      </div>
-
-      {/* ── Highlights ───────────────────────────────────────── */}
+      {/* How it works */}
       <section className="mb-12">
         <h2
           className="text-2xl font-bold mb-6"
           style={{ color: "var(--color-text)" }}
         >
-          Why AetherGate
+          How it works
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {highlights.map((h) => (
-            <div key={h.title} className="panel">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {steps.map((s) => (
+            <div key={s.n} className="panel">
               <span
-                className="w-10 h-10 rounded-lg flex items-center justify-center mb-3"
-                style={{ background: "var(--color-brand-soft)" }}
+                className="text-xs font-semibold tracking-widest"
+                style={{ color: "var(--color-brand)" }}
               >
-                <h.icon size={20} style={{ color: "var(--color-brand)" }} />
+                {s.n}
               </span>
-              <h3 className="font-semibold mb-1" style={{ color: "var(--color-text)" }}>
-                {h.title}
+              <h3
+                className="text-base font-semibold mt-1 mb-1"
+                style={{ color: "var(--color-text)" }}
+              >
+                {s.title}
               </h3>
               <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
-                {h.desc}
+                {s.desc}
               </p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ── Health ───────────────────────────────────────────── */}
+      {/* What you actually get back */}
+      <section className="mb-12">
+        <h2
+          className="text-2xl font-bold mb-6"
+          style={{ color: "var(--color-text)" }}
+        >
+          What you get back
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="panel">
+            <FileText size={20} style={{ color: "var(--color-brand)" }} />
+            <h3
+              className="text-base font-semibold mt-2 mb-1"
+              style={{ color: "var(--color-text)" }}
+            >
+              A score, not a verdict
+            </h3>
+            <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
+              A number that tells you how close the resume is to the post,
+              with the reasoning spelled out — not a thumbs up or down.
+            </p>
+          </div>
+          <div className="panel">
+            <TrendingUp size={20} style={{ color: "var(--color-brand)" }} />
+            <h3
+              className="text-base font-semibold mt-2 mb-1"
+              style={{ color: "var(--color-text)" }}
+            >
+              The gaps, named
+            </h3>
+            <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
+              The exact skills and experience the job calls for that the
+              resume doesn't show — so you know what to probe in an interview.
+            </p>
+          </div>
+          <div className="panel">
+            <Upload size={20} style={{ color: "var(--color-brand)" }} />
+            <h3
+              className="text-base font-semibold mt-2 mb-1"
+              style={{ color: "var(--color-text)" }}
+            >
+              Want the candidate to improve?
+            </h3>
+            <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
+              The Learning Center turns those gaps into a short list of
+              resources so someone can close them.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* API Health */}
       <div className="panel">
         <h2 className="text-base font-semibold mb-2" style={{ color: "var(--color-text)" }}>
           API Health
