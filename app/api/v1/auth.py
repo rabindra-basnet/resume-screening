@@ -31,7 +31,10 @@ def _get_oauth() -> OAuth:
         return _oauth
     settings = get_settings()
     if not settings.google_client_id:
-        raise RuntimeError("GOOGLE_CLIENT_ID is not configured")
+        raise HTTPException(
+            status_code=503,
+            detail="Google OAuth is not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.",
+        )
     _oauth = OAuth()
     _oauth.register(
         name="google",
