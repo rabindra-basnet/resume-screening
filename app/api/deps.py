@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import AsyncIterator
 from typing import Annotated
 
@@ -12,6 +13,8 @@ from app.database import get_database
 from app.database.repositories import LearningRepository, ProviderRepository
 from app.database.schema import UserModel
 from app.services import ScreeningService
+
+logger = logging.getLogger(__name__)
 
 
 async def get_session() -> AsyncIterator[AsyncSession]:
@@ -42,7 +45,8 @@ async def _decode_session_user(request: Request, session: AsyncSession) -> UserM
         if not user_id:
             return None
         return await session.get(UserModel, user_id)
-    except (BadSignature, SignatureExpired):
+    except (SignatureExpired, BadSignature):
+        logger.info("Invalid or expired session cookie: %s", settings.session_cookie_name)
         return None
 
 

@@ -29,12 +29,17 @@ from app.api.v1 import (
 )
 from app.config.constants import API_V1_PREFIX
 from app.config.settings import get_settings
+from app.core.errors import register_exception_handlers
+from app.core.logging import configure_logging
+from app.core.middleware import RequestContextMiddleware
 from app.database import get_database
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 UI_DIST = BASE_DIR / "ui" / "dist"
 
 logger = logging.getLogger(__name__)
+
+configure_logging()
 
 
 @asynccontextmanager
@@ -69,6 +74,8 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
+    app.add_middleware(RequestContextMiddleware)
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
@@ -84,6 +91,8 @@ def create_app() -> FastAPI:
         max_age=settings.session_cookie_max_age,
         same_site="lax",
     )
+
+    register_exception_handlers(app)
 
     app.include_router(health_router, prefix=API_V1_PREFIX)
     app.include_router(auth_router, prefix=API_V1_PREFIX)

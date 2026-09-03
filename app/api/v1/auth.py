@@ -2,19 +2,26 @@
 
 Provides ``/auth/login/google`` (redirect to Google) and
 ``/auth/callback/google`` (exchange code, create/find user, set session).
+The callback distinguishes between OAuth provider failures (``400``) and
+database persistence failures (``500``) so the caller sees an actionable
+error instead of an opaque one.
 """
 
 from __future__ import annotations
 
 import logging
+from typing import Any
 
+from authlib.integrations.base_client.errors import OAuthError
 from authlib.integrations.starlette_client import OAuth
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_session
 from app.config.settings import get_settings
+from app.core.logging import request_id_var
 from app.database.repositories.user_repository import UserRepository
 
 logger = logging.getLogger(__name__)
@@ -46,6 +53,28 @@ def _get_oauth() -> OAuth:
     return _oauth
 
 
+def _read_userinfo(token: dict[str, Any]) -> dict[str, Any]:
+    """Extract normalized Google user info from the token claims.
+
+    Args:
+        token: The token dict from ``authorize_access_token``.
+
+    Returns:
+        A dict with ``sub``, ``email``, ``name`` and ``picture`` if present.
+    """
+    userinfo = token.get("userinfo") or {}
+    if not userinfo and token.get("id_token"):
+        # Fall back to claims embedded in the id_token for older flows.
+        claims = token.get("id_token_claims") or {}
+        userinfo = claims
+    return {
+        "google_id": userinfo.get("sub"),
+        "email": userinfo.get("email"),
+        "name": userinfo.get("name"),
+        "picture": userinfo.get("picture"),
+    }
+
+
 @router.get("/login/google")
 async def login_google(request: Request) -> RedirectResponse:
     """Redirect the user to Google's OAuth consent screen."""
@@ -62,32 +91,80 @@ async def callback_google(
 ) -> RedirectResponse:
     """Handle the Google OAuth callback.
 
-    Exchanges the authorization code for tokens, fetches user info,
-    creates or updates the user record, and sets a signed session cookie.
+    Exchanges the authorization code for tokens, creates or updates the user
+    record, and sets a signed session cookie. On success the browser is
+    redirected to the account dashboard.
+
+    Raises:
+        HTTPException: 400 for OAuth provider errors (e.g. expired/reused
+            ``code``), 500 for database failures.
     """
+    request_id = request_id_var.get()
+    origin = get_settings().app_origin
+    oauth = _get_oauth()
+
     try:
-        oauth = _get_oauth()
         token = await oauth.google.authorize_access_token(request)
-    except Exception:
-        logger.exception("Google OAuth token exchange failed")
-        raise HTTPException(status_code=401, detail="Google authentication failed") from None
+    except OAuthError as exc:
+        logger.warning(
+            "Google OAuth token exchange rejected [%s] error=%r description=%r uri=%r",
+            request_id,
+            getattr(exc, "error", None),
+            getattr(exc, "error_description", None) or getattr(exc, "description", None),
+            getattr(exc, "error_uri", None),
+        )
+        description = (
+            getattr(exc, "error_description", None)
+            or getattr(exc, "description", None)
+            or (
+                "The authorization code is invalid or was already used. "
+                "Please sign in again."
+            )
+        )
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Google authentication failed: {description}"
+            ),
+        ) from None
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.exception("Unexpected error exchanging Google token [%s]", request_id)
+        raise HTTPException(
+            status_code=502,
+            detail="Could not reach Google OAuth. Please try again.",
+        ) from exc
 
-    userinfo = token.get("userinfo") or {}
-    google_id = userinfo.get("sub")
-    email = userinfo.get("email")
-    name = userinfo.get("name") or email or "User"
-    avatar = userinfo.get("picture")
-
+    info = _read_userinfo(token)
+    google_id = info["google_id"]
+    email = info["email"]
     if not google_id or not email:
-        raise HTTPException(status_code=401, detail="Google profile missing required fields")
+        logger.warning(
+            "Google profile missing required fields [%s] google_id=%r email=%r",
+            request_id,
+            bool(google_id),
+            bool(email),
+        )
+        raise HTTPException(
+            status_code=400,
+            detail="Google profile missing required fields.",
+        )
 
-    repo = UserRepository(session)
-    user = await repo.upsert_from_google(
-        email=email,
-        name=name,
-        google_id=google_id,
-        avatar_url=avatar,
-    )
+    try:
+        repo = UserRepository(session)
+        user = await repo.upsert_from_google(
+            email=email,
+            name=info["name"] or email or "User",
+            google_id=google_id,
+            avatar_url=info["picture"],
+        )
+    except SQLAlchemyError as exc:
+        logger.exception(
+            "Failed to persist Google user [%s] email=%s", request_id, email
+        )
+        raise HTTPException(
+            status_code=500,
+            detail="Could not save user account. Please try again later.",
+        ) from exc
 
     from itsdangerous import URLSafeTimedSerializer
 
@@ -95,7 +172,7 @@ async def callback_google(
     signer = URLSafeTimedSerializer(settings.session_secret)
     session_token = signer.dumps({"user_id": user.id})
 
-    origin = settings.app_origin
+    logger.info("Authenticated user [%s] email=%s user_id=%s", request_id, email, user.id)
     response = RedirectResponse(url=f"{origin}/account")
     response.set_cookie(
         key=settings.session_cookie_name,
