@@ -69,18 +69,21 @@ def _add_file_handler(path: str, *, max_bytes: int, backup_count: int) -> None:
     """
     if path in _installed_files:
         return
-    target = Path(path)
-    target.parent.mkdir(parents=True, exist_ok=True)
-    handler = RotatingFileHandler(
-        target,
-        maxBytes=max_bytes,
-        backupCount=backup_count,
-        encoding="utf-8",
-    )
-    handler.setFormatter(logging.Formatter(_LOG_FORMAT))
-    handler.addFilter(RequestIdFilter())
-    logging.getLogger().addHandler(handler)
-    _installed_files.add(path)
+    try:
+        target = Path(path)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        handler = RotatingFileHandler(
+            target,
+            maxBytes=max_bytes,
+            backupCount=backup_count,
+            encoding="utf-8",
+        )
+        handler.setFormatter(logging.Formatter(_LOG_FORMAT))
+        handler.addFilter(RequestIdFilter())
+        logging.getLogger().addHandler(handler)
+        _installed_files.add(path)
+    except Exception as exc:
+        logging.warning("File logging unavailable (e.g. read-only filesystem): %s", exc)
 
 
 def configure_logging(
