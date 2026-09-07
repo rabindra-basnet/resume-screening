@@ -1,8 +1,16 @@
 """PDF text extraction utilities.
 
-Uses ``pypdf`` for lightweight, Vercel-compatible PDF text extraction.
-Handles standard PDF text streams and raises explicit typed exceptions
-so callers can handle errors predictably.
+Extraction pipeline (fastest → most powerful, run only as needed):
+
+1. ``pypdf`` — lightweight, fast for normal text-layer PDFs. Never loads the
+   heavy OCR stack.
+2. ``pymupdf`` (MuPDF) — much stronger text extraction for oddly-structured
+   PDFs (encodings, corrupt tag tables, etc.). Still text-layer only.
+3. OCR fallback — when a PDF has no extractable text layer at all (scanned
+   pages, or text converted to vector outlines like Canva/Figma exports), the
+   pages are rendered to images with PyMuPDF and read by RapidOCR (ONNX, fully
+   offline, free, serverless-safe). Kept lazy so normal resumes never import
+   onnxruntime/opencv.
 """
 
 from __future__ import annotations
@@ -55,19 +63,84 @@ class PDFParser:
         except Exception as exc:  # noqa: BLE001
             raise PDFParsingError(f"Could not read PDF source: {exc}") from exc
 
+        text = self._extract_text_layer(raw_bytes)
+        if text.strip():
+            return text.strip()
+
+        text = self._extract_with_pymupdf(raw_bytes)
+        if text.strip():
+            logger.info("Extracted text from PDF via PyMuPDF fallback")
+            return text.strip()
+
+        text = self._extract_with_ocr(raw_bytes)
+        if text.strip():
+            logger.info("Extracted text from PDF via OCR fallback (no text layer)")
+            return text.strip()
+
+        raise PDFParsingError(
+            "PDF yielded no extractable text content. The file appears to be "
+            "image-based or has no text layer; this could not be OCR'd."
+        )
+
+    def _extract_text_layer(self, raw_bytes: bytes) -> str:
+        """Try the fast pypdf path first."""
         try:
             reader = PdfReader(io.BytesIO(raw_bytes))
             pages = reader.pages
             if self.max_pages:
                 pages = pages[: self.max_pages]
-            text = "\n".join((page.extract_text() or "") for page in pages)
-        except Exception as exc:  # noqa: BLE001
-            raise PDFParsingError(f"Failed to parse PDF: {exc}") from exc
+            return "\n".join((page.extract_text() or "") for page in pages)
+        except Exception as exc:  # noqa: BLE001 - fall through to stronger engines
+            logger.warning("pypdf failed to parse PDF: %s", exc)
+            return ""
 
-        text = text.strip()
-        if not text:
-            raise PDFParsingError("PDF yielded no extractable text content")
-        return text
+    def _extract_with_pymupdf(self, raw_bytes: bytes) -> str:
+        """Try MuPDF's text extraction, which handles more encodings."""
+        try:
+            import pymupdf  # lazy: heavy native wheel, only on fallback
+
+            doc = pymupdf.open(stream=raw_bytes, filetype="pdf")
+            try:
+                page_count = len(doc) if not self.max_pages else min(self.max_pages, len(doc))
+                return "\n".join(
+                    (doc[page_no].get_text() or "") for page_no in range(page_count)
+                )
+            finally:
+                doc.close()
+        except Exception as exc:  # noqa: BLE001 - fall through to OCR
+            logger.warning("PyMuPDF text extraction failed: %s", exc)
+            return ""
+
+    def _extract_with_ocr(self, raw_bytes: bytes) -> str:
+        """Render pages to images via PyMuPDF and OCR them with RapidOCR.
+
+        Handles PDFs whose text was flattened to vector outlines (Canva, Figma,
+        print-to-PDF) or plain scans. Runs entirely offline on Vercel (ONNX
+        models are bundled in the ``rapidocr`` wheel). Lazy-imported so the
+        normal path never touches onnxruntime/opencv.
+        """
+        try:
+            import pymupdf  # lazy
+            from rapidocr import RapidOCR
+
+            ocr = RapidOCR()
+            doc = pymupdf.open(stream=raw_bytes, filetype="pdf")
+            try:
+                page_count = len(doc) if not self.max_pages else min(self.max_pages, len(doc))
+                chunks: list[str] = []
+                for page_no in range(page_count):
+                    pix = doc[page_no].get_pixmap(dpi=150)
+                    png = pix.tobytes("png")
+                    result = ocr(png)
+                    texts = getattr(result, "txts", None)
+                    if texts:
+                        chunks.append("\n".join(texts))
+                return "\n".join(chunks)
+            finally:
+                doc.close()
+        except Exception as exc:  # noqa: BLE001 - report as parse failure
+            logger.warning("OCR fallback failed: %s", exc)
+            return ""
 
 
 def parse_pdf(file: object) -> str:

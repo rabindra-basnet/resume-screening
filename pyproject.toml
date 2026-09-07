@@ -25,6 +25,10 @@ dependencies = [
     "aiosqlite>=0.20,<1.0",
     "alembic>=1.14,<2.0",
     "pypdf>=5.0,<6.0",
+    "pymupdf>=1.28,<2.0",
+    "opencv-python-headless>=5.0,<6.0",
+    "onnxruntime>=1.29,<2.0",
+    "rapidocr>=3.9,<4.0",
     "python-dotenv>=1.0,<2.0",
     "cryptography>=44.0,<45.0",
     "python-docx>=1.1,<2.0",
@@ -51,6 +55,15 @@ dev = [
 
 [project.scripts]
 resume-screen = "app.main:cli_entry"
+
+[tool.uv]
+# rapidocr (and opencv consumers in general) declare a dependency on the full
+# `opencv-python`, which links against system libGL/libX11 — unavailable on
+# Vercel's Python runtime. Drop that transitive dep and ship `opencv-python-headless`
+# instead (it provides the same `cv2` module without GUI/system libs).
+override-dependencies = [
+    "opencv-python; python_version < '0'",
+]
 
 [tool.ruff]
 target-version = "py312"
