@@ -1,6 +1,6 @@
 import { Link, Outlet } from "@tanstack/react-router";
 import { FileText, Sparkles, LogIn, LogOut } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/features/auth/context/AuthContext";
 import {
   Avatar,
   AvatarImage,

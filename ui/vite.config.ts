@@ -26,6 +26,15 @@ export default defineConfig({
     emptyOutDir: true,
     sourcemap: false,
     chunkSizeWarningLimit: 900,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ["react", "react-dom"],
+          router: ["@tanstack/react-router", "@tanstack/react-store"],
+          icons: ["lucide-react"],
+        },
+      },
+    },
   },
   server: {
     port: 5173,
