@@ -1,9 +1,6 @@
+import { Link } from "@tanstack/react-router";
 import { Briefcase, GraduationCap, Sparkles, Upload } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 import { CvBuilder } from "../components/CvBuilder";
-import { CreateJobForm } from "@/features/jobs/components/CreateJobForm";
-import { JobLookupView } from "@/features/jobs/components/JobLookupView";
-import { LearningPage } from "@/features/learning";
 
 export default function ScreenPage() {
   return (
@@ -22,53 +19,50 @@ export default function ScreenPage() {
         </p>
       </div>
 
-      {/* Single Workspace Tabs */}
-      <Tabs defaultValue="screen" className="w-full space-y-6">
-        <div className="flex items-center justify-between border-b border-border/60">
-          <TabsList className="h-auto gap-1 bg-transparent p-0">
-            <TabsTrigger
-              value="screen"
-              className="gap-2 rounded-t-lg border-b-2 border-transparent px-4 py-2.5 font-semibold data-[state=active]:border-primary data-[state=active]:bg-transparent"
-            >
-              <Upload size={16} /> Screen Resume
-            </TabsTrigger>
-            <TabsTrigger
-              value="jobs"
-              className="gap-2 rounded-t-lg border-b-2 border-transparent px-4 py-2.5 font-semibold data-[state=active]:border-primary data-[state=active]:bg-transparent"
-            >
-              <Briefcase size={16} /> Job Descriptions
-            </TabsTrigger>
-            <TabsTrigger
-              value="learning"
-              className="gap-2 rounded-t-lg border-b-2 border-transparent px-4 py-2.5 font-semibold data-[state=active]:border-primary data-[state=active]:bg-transparent"
-            >
-              <GraduationCap size={16} /> Learning Roadmap
-            </TabsTrigger>
-          </TabsList>
+      {/* Single Workspace Navigation Tabs */}
+      <div className="flex items-center justify-between border-b border-border/60">
+        <div className="flex items-center gap-1">
+          <Link
+            to="/screen"
+            activeProps={{
+              className: "border-primary text-primary font-bold",
+            }}
+            inactiveProps={{
+              className: "border-transparent text-muted-foreground hover:text-foreground",
+            }}
+            className="flex items-center gap-2 rounded-t-lg border-b-2 px-4 py-2.5 font-semibold text-sm transition-all"
+          >
+            <Upload size={16} /> Screen Resume
+          </Link>
+          <Link
+            to="/jobs"
+            activeProps={{
+              className: "border-primary text-primary font-bold",
+            }}
+            inactiveProps={{
+              className: "border-transparent text-muted-foreground hover:text-foreground",
+            }}
+            className="flex items-center gap-2 rounded-t-lg border-b-2 px-4 py-2.5 font-semibold text-sm transition-all"
+          >
+            <Briefcase size={16} /> Job Descriptions
+          </Link>
+          <Link
+            to="/learning"
+            activeProps={{
+              className: "border-primary text-primary font-bold",
+            }}
+            inactiveProps={{
+              className: "border-transparent text-muted-foreground hover:text-foreground",
+            }}
+            className="flex items-center gap-2 rounded-t-lg border-b-2 px-4 py-2.5 font-semibold text-sm transition-all"
+          >
+            <GraduationCap size={16} /> Learning Roadmap
+          </Link>
         </div>
+      </div>
 
-        {/* Tab 1: Screen Resume */}
-        <TabsContent value="screen" className="space-y-8">
-          <CvBuilder />
-        </TabsContent>
-
-        {/* Tab 2: Job Descriptions */}
-        <TabsContent value="jobs" className="space-y-6">
-          <div className="space-y-1">
-            <h2 className="text-2xl font-bold tracking-tight">Job Descriptions</h2>
-            <p className="text-muted-foreground">
-              Save job descriptions to reuse during screening and CV matching.
-            </p>
-          </div>
-          <CreateJobForm />
-          <JobLookupView />
-        </TabsContent>
-
-        {/* Tab 3: Learning Roadmap */}
-        <TabsContent value="learning" className="space-y-6">
-          <LearningPage />
-        </TabsContent>
-      </Tabs>
+      {/* Screen Resume Workspace */}
+      <CvBuilder />
     </div>
   );
 }

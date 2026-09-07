@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { apiGet, errMsg } from "@/shared/api/client";
@@ -7,7 +8,7 @@ import { Input } from "@/shared/components/ui/input";
 import { Button } from "@/shared/components/ui/button";
 import { Badge } from "@/shared/components/ui/badge";
 import { Skeleton } from "@/shared/components/ui/skeleton";
-import { GraduationCap, Search, Sparkles, Filter } from "lucide-react";
+import { GraduationCap, Search, Sparkles, Filter, Upload, Briefcase } from "lucide-react";
 import { ResourceGroupCard } from "../components/ResourceCard";
 
 export default function LearningPage() {
@@ -68,15 +69,58 @@ export default function LearningPage() {
 
   return (
     <div className="space-y-8 fade-in">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 text-primary font-semibold text-xs tracking-wider uppercase">
-            <Sparkles size={14} /> AI Recommendation Engine
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight mt-1">Learning Center</h1>
-          <p className="text-muted-foreground mt-1 max-w-2xl">
-            Targeted courses, tutorials, and materials recommended to close skill gaps discovered during candidate resume screenings.
-          </p>
+      {/* Header */}
+      <div className="space-y-2">
+        <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+          <Sparkles size={13} /> Agentic Talent Workspace
+        </div>
+        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+          Learning Roadmap
+        </h1>
+        <p className="max-w-2xl text-muted-foreground">
+          Targeted courses, tutorials, and materials recommended to close skill gaps discovered during candidate resume screenings.
+        </p>
+      </div>
+
+      {/* Single Workspace Navigation Tabs */}
+      <div className="flex items-center justify-between border-b border-border/60">
+        <div className="flex items-center gap-1">
+          <Link
+            to="/screen"
+            activeProps={{
+              className: "border-primary text-primary font-bold",
+            }}
+            inactiveProps={{
+              className: "border-transparent text-muted-foreground hover:text-foreground",
+            }}
+            className="flex items-center gap-2 rounded-t-lg border-b-2 px-4 py-2.5 font-semibold text-sm transition-all"
+          >
+            <Upload size={16} /> Screen Resume
+          </Link>
+          <Link
+            to="/jobs"
+            activeProps={{
+              className: "border-primary text-primary font-bold",
+            }}
+            inactiveProps={{
+              className: "border-transparent text-muted-foreground hover:text-foreground",
+            }}
+            className="flex items-center gap-2 rounded-t-lg border-b-2 px-4 py-2.5 font-semibold text-sm transition-all"
+          >
+            <Briefcase size={16} /> Job Descriptions
+          </Link>
+          <Link
+            to="/learning"
+            activeProps={{
+              className: "border-primary text-primary font-bold",
+            }}
+            inactiveProps={{
+              className: "border-transparent text-muted-foreground hover:text-foreground",
+            }}
+            className="flex items-center gap-2 rounded-t-lg border-b-2 px-4 py-2.5 font-semibold text-sm transition-all"
+          >
+            <GraduationCap size={16} /> Learning Roadmap
+          </Link>
         </div>
       </div>
 
