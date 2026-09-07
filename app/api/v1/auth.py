@@ -9,7 +9,11 @@ error instead of an opaque one.
 
 from __future__ import annotations
 
+import base64
+import json
 import logging
+import urllib.parse
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from authlib.integrations.base_client.errors import OAuthError
@@ -22,6 +26,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_session
 from app.config.settings import get_settings
 from app.core.logging import request_id_var
+from app.database.repositories.session_repository import SessionRepository
 from app.database.repositories.user_repository import UserRepository
 
 logger = logging.getLogger(__name__)
@@ -29,6 +34,23 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 _oauth: OAuth | None = None
+
+
+def _public_origin(request: Request) -> str:
+    """Return the origin (scheme + host) that should appear in OAuth redirects."""
+    forwarded = request.headers.get("x-forwarded-proto", "")
+    scheme = forwarded.split(",")[0].strip() if forwarded else request.url.scheme
+    host = request.headers.get("host") or request.url.netloc
+
+    # Local development requests (localhost / 127.0.0.1) ALWAYS use local origin
+    if "localhost" in host.lower() or "127.0.0.1" in host:
+        return f"{scheme}://{host}".rstrip("/")
+
+    configured = get_settings().app_origin.strip().rstrip("/")
+    if configured:
+        return configured
+
+    return f"{scheme}://{host}".rstrip("/")
 
 
 def _get_oauth() -> OAuth:
@@ -51,6 +73,34 @@ def _get_oauth() -> OAuth:
         client_kwargs={"scope": "openid email profile"},
     )
     return _oauth
+
+
+def _jwt_expiry(id_token: str) -> datetime | None:
+    """Read the ``exp`` claim from a Google JWT payload (without re-verifying).
+
+    The JWT signature, audience and issuer are already verified by authlib
+    during ``authorize_access_token``; this only decodes the payload to learn
+    when Google considers the token expired.
+
+    Args:
+        id_token: The raw Google ``id_token`` JWT.
+
+    Returns:
+        The token expiry as aware UTC datetime, or ``None`` if unavailable.
+    """
+    if not id_token:
+        return None
+    try:
+        payload = id_token.split(".")[1]
+        payload += "=" * (-len(payload) % 4)  # restore base64 padding
+        claims = json.loads(base64.urlsafe_b64decode(payload))
+        exp = claims.get("exp")
+    except (IndexError, ValueError, json.JSONDecodeError):
+        # Malformed tokens are rejected upstream; treat as "no expiry known".
+        return None
+    if not isinstance(exp, int | float):
+        return None
+    return datetime.fromtimestamp(exp, tz=UTC)
 
 
 def _read_userinfo(token: dict[str, Any]) -> dict[str, Any]:
@@ -79,8 +129,7 @@ def _read_userinfo(token: dict[str, Any]) -> dict[str, Any]:
 async def login_google(request: Request) -> RedirectResponse:
     """Redirect the user to Google's OAuth consent screen."""
     oauth = _get_oauth()
-    origin = get_settings().app_origin
-    redirect_uri = f"{origin}/api/v1/auth/callback/google"
+    redirect_uri = f"{_public_origin(request)}/api/v1/auth/callback/google"
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
 
@@ -100,39 +149,47 @@ async def callback_google(
             ``code``), 500 for database failures.
     """
     request_id = request_id_var.get()
-    origin = get_settings().app_origin
+    origin = _public_origin(request)
+    redirect_uri = f"{origin}/api/v1/auth/callback/google"
     oauth = _get_oauth()
+
+    error_redirect = f"{origin}/login?error="
+    state_param = request.query_params.get("state")
+    if state_param:
+        state_key = f"_state_google_{state_param}"
+        if state_key not in request.session:
+            request.session[state_key] = {"data": {"state": state_param}}
 
     try:
         token = await oauth.google.authorize_access_token(request)
     except OAuthError as exc:
-        logger.warning(
-            "Google OAuth token exchange rejected [%s] error=%r description=%r uri=%r",
-            request_id,
-            getattr(exc, "error", None),
-            getattr(exc, "error_description", None) or getattr(exc, "description", None),
-            getattr(exc, "error_uri", None),
-        )
+        err = getattr(exc, "error", None) or "oauth_error"
         description = (
             getattr(exc, "error_description", None)
             or getattr(exc, "description", None)
-            or (
-                "The authorization code is invalid or was already used. "
-                "Please sign in again."
-            )
+            or "The authorization failed. Please try signing in again."
         )
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                f"Google authentication failed: {description}"
-            ),
-        ) from None
-    except Exception as exc:  # pragma: no cover - defensive
-        logger.exception("Unexpected error exchanging Google token [%s]", request_id)
-        raise HTTPException(
-            status_code=502,
-            detail="Could not reach Google OAuth. Please try again.",
-        ) from exc
+        logger.warning(
+            "Google OAuth token exchange rejected [%s] error=%r description=%r "
+            "uri=%r redirect_uri=%r",
+            request_id,
+            err,
+            description,
+            getattr(exc, "error_uri", None),
+            redirect_uri,
+        )
+        return RedirectResponse(
+            url=f"{error_redirect}{urllib.parse.quote(description)}"
+        )
+    except Exception:  # pragma: no cover - defensive
+        logger.exception(
+            "Unexpected error exchanging Google token [%s] redirect_uri=%r",
+            request_id,
+            redirect_uri,
+        )
+        return RedirectResponse(
+            url=f"{error_redirect}{urllib.parse.quote('Could not reach Google. Please try again.')}"
+        )
 
     info = _read_userinfo(token)
     google_id = info["google_id"]
@@ -144,11 +201,17 @@ async def callback_google(
             bool(google_id),
             bool(email),
         )
-        raise HTTPException(
-            status_code=400,
-            detail="Google profile missing required fields.",
+        return RedirectResponse(
+            url=(
+                f"{error_redirect}"
+                f"{urllib.parse.quote('Google did not return a valid profile. Please try again.')}"
+            )
         )
 
+    # Persist a server-side session bound to the user and the Google JWT that
+    # authlib just verified. Only the opaque session id is sent to the browser.
+    settings = get_settings()
+    id_token = token.get("id_token") or ""
     try:
         repo = UserRepository(session)
         user = await repo.upsert_from_google(
@@ -157,26 +220,29 @@ async def callback_google(
             google_id=google_id,
             avatar_url=info["picture"],
         )
-    except SQLAlchemyError as exc:
-        logger.exception(
-            "Failed to persist Google user [%s] email=%s", request_id, email
+        auth_session = await SessionRepository(session).create(
+            user_id=user.id,
+            google_id_token=id_token,
+            google_access_token=token.get("access_token"),
+            token_expires_at=_jwt_expiry(id_token),
+            expires_at=datetime.now(UTC) + timedelta(seconds=settings.session_cookie_max_age),
         )
-        raise HTTPException(
-            status_code=500,
-            detail="Could not save user account. Please try again later.",
-        ) from exc
-
-    from itsdangerous import URLSafeTimedSerializer
-
-    settings = get_settings()
-    signer = URLSafeTimedSerializer(settings.session_secret)
-    session_token = signer.dumps({"user_id": user.id})
+    except SQLAlchemyError:
+        logger.exception(
+            "Failed to persist Google user/session [%s] email=%s", request_id, email
+        )
+        return RedirectResponse(
+            url=(
+                f"{error_redirect}"
+                f"{urllib.parse.quote('Could not save your account. Please try again later.')}"
+            )
+        )
 
     logger.info("Authenticated user [%s] email=%s user_id=%s", request_id, email, user.id)
-    response = RedirectResponse(url=f"{origin}/account")
+    response = RedirectResponse(url=f"{origin}/screen")
     response.set_cookie(
         key=settings.session_cookie_name,
-        value=session_token,
+        value=auth_session.id,
         max_age=settings.session_cookie_max_age,
         httponly=True,
         samesite="lax",
@@ -205,10 +271,30 @@ async def auth_me(
 
 
 @router.post("/logout")
-async def auth_logout(request: Request) -> RedirectResponse:
-    """Clear the session cookie and redirect to the landing page."""
+async def auth_logout(
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+) -> RedirectResponse:
+    """Revoke the server-side session and clear the cookie.
+
+    Deleting the ``sessions`` row invalidates the cookie server-side, so a
+    stolen session cookie cannot be replayed after logout.
+
+    Args:
+        request: The incoming request carrying the session cookie.
+        session: The request-scoped async database session.
+
+    Returns:
+        A redirect to the landing page with the session cookie cleared.
+    """
     settings = get_settings()
-    response = RedirectResponse(url=settings.app_origin)
+    session_id = request.cookies.get(settings.session_cookie_name)
+    if session_id:
+        try:
+            await SessionRepository(session).delete(session_id)
+        except SQLAlchemyError:
+            logger.exception("Failed to delete session row on logout: %s", session_id)
+    response = RedirectResponse(url=_public_origin(request))
     response.delete_cookie(
         key=settings.session_cookie_name,
         httponly=True,

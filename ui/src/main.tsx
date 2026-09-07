@@ -1,17 +1,22 @@
-import React from "react";
+import { RouterProvider, createRouter } from "@tanstack/react-router";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter } from "react-router-dom";
+import { routeTree } from "./routeTree.gen";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
-import App from "./App";
 import "./styles/index.css";
 
+const router = createRouter({ routeTree });
+
+declare module "@tanstack/react-router" {
+  interface Register {
+    router: typeof router;
+  }
+}
+
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
+  <>
+    <RouterProvider router={router} />
     <Analytics />
     <SpeedInsights />
-  </React.StrictMode>,
+  </>
 );

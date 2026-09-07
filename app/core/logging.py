@@ -29,18 +29,23 @@ class RequestIdFilter(logging.Filter):
         return True
 
 
-def configure_logging(level: int = logging.INFO) -> None:
+def configure_logging(level: int | str = logging.INFO) -> None:
     """Configure root logging for the application.
 
     Idempotent: re-running this does not duplicate handlers.
 
     Args:
-        level: The minimum log level to emit.
+        level: The minimum log level to emit, as an int or level name
+            (e.g. ``"DEBUG"``, ``"INFO"``). Strings are resolved via
+            :func:`logging.getLevelName`.
     """
+    if isinstance(level, str):
+        level = logging.getLevelName(level.upper())
     root = logging.getLogger()
     # Avoid stacking duplicate handlers on repeated calls (tests, reload).
     for handler in list(root.handlers):
         if isinstance(handler, _MarkerHandler):
+            root.setLevel(level)
             return
     root.setLevel(level)
     handler = _MarkerHandler()

@@ -9,6 +9,12 @@ from .document_parser import DocumentParser, DocumentParsingError
 from .docx_parser import DocxParser, DocxParsingError, parse_docx
 from .pdf_parser import PDFParser, PDFParsingError, parse_pdf
 from .skill_matcher import calculate_skill_match, match_skills
+from .web_search import (
+    fetch_text,
+    instant_answer,
+    search_job_hints,
+    search_learning_path,
+)
 
 __all__ = [
     "DocumentParser",
@@ -21,4 +27,8 @@ __all__ = [
     "parse_pdf",
     "calculate_skill_match",
     "match_skills",
+    "instant_answer",
+    "fetch_text",
+    "search_job_hints",
+    "search_learning_path",
 ]

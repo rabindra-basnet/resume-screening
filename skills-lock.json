@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "tanstack-router": {
+      "source": "blencorp/claude-code-kit",
+      "sourceType": "github",
+      "skillPath": "cli/kits/tanstack-router/skills/tanstack-router/SKILL.md",
+      "computedHash": "1cc30d1f1e59b0b4ab78f538ccccc6382b1ce3b39fbf1a322104bb020bf82df7"
+    }
+  }
+}

@@ -1,68 +1,58 @@
 import type { Config } from "tailwindcss";
+import tailwindcssAnimate from "tailwindcss-animate";
 
-// AetherGate — semantic design tokens.
-// All UI colors/spacing live here and in src/styles/theme.css; components
-// reference these tokens and never hardcode raw values.
 export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
-        // Backgrounds
-        app: {
-          bg: "var(--color-app-bg)",
-          surface: "var(--color-app-surface)",
-          surfaceAlt: "var(--color-app-surface-alt)",
+        background: "var(--background)",
+        foreground: "var(--foreground)",
+        card: {
+          DEFAULT: "var(--card)",
+          foreground: "var(--card-foreground)",
         },
-        // Text
-        text: {
-          DEFAULT: "var(--color-text)",
-          muted: "var(--color-text-muted)",
-          inverse: "var(--color-text-inverse)",
+        popover: {
+          DEFAULT: "var(--popover)",
+          foreground: "var(--popover-foreground)",
         },
-        // Borders
-        border: {
-          DEFAULT: "var(--color-border)",
-          strong: "var(--color-border-strong)",
+        primary: {
+          DEFAULT: "var(--primary)",
+          foreground: "var(--primary-foreground)",
         },
-        // Brand / actions
-        brand: {
-          DEFAULT: "var(--color-brand)",
-          hover: "var(--color-brand-hover)",
-          soft: "var(--color-brand-soft)",
+        secondary: {
+          DEFAULT: "var(--secondary)",
+          foreground: "var(--secondary-foreground)",
         },
-        // Semantic status
-        success: {
-          DEFAULT: "var(--color-success)",
-          soft: "var(--color-success-soft)",
+        muted: {
+          DEFAULT: "var(--muted)",
+          foreground: "var(--muted-foreground)",
         },
-        warning: {
-          DEFAULT: "var(--color-warning)",
-          soft: "var(--color-warning-soft)",
+        accent: {
+          DEFAULT: "var(--accent)",
+          foreground: "var(--accent-foreground)",
         },
-        danger: {
-          DEFAULT: "var(--color-danger)",
-          soft: "var(--color-danger-soft)",
+        destructive: {
+          DEFAULT: "var(--destructive)",
+          foreground: "var(--destructive-foreground)",
         },
-        info: {
-          DEFAULT: "var(--color-info)",
-          soft: "var(--color-info-soft)",
+        border: "var(--border)",
+        input: "var(--input)",
+        ring: "var(--ring)",
+        chart: {
+          "1": "var(--chart-1)",
+          "2": "var(--chart-2)",
+          "3": "var(--chart-3)",
+          "4": "var(--chart-4)",
+          "5": "var(--chart-5)",
         },
-      },
-      fontFamily: {
-        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
-        mono: ["var(--font-mono)", "monospace"],
       },
       borderRadius: {
-        DEFAULT: "var(--radius)",
-        sm: "var(--radius-sm)",
-        lg: "var(--radius-lg)",
-      },
-      spacing: {
-        gutter: "var(--space-gutter)",
-        panel: "var(--space-panel)",
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
       },
     },
   },
-  plugins: [],
+  plugins: [tailwindcssAnimate],
 } satisfies Config;

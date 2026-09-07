@@ -4,12 +4,10 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, HTTPException
 
-from app.api.deps import get_current_user, get_session
+from app.api.deps import CurrentUserDep
 from app.database.repositories.resume_repository import ResumeRepository
-from app.database.schema import UserModel
 
 logger = logging.getLogger(__name__)
 
@@ -18,16 +16,15 @@ router = APIRouter(prefix="/account", tags=["account"])
 
 @router.get("/documents")
 async def list_documents(
-    current_user: UserModel = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session),
+    ctx: CurrentUserDep,
 ) -> list[dict]:
     """Return the current user's screening results (documents).
 
     Returns:
         A list of screening result dicts with blob URLs and metadata.
     """
-    repo = ResumeRepository(session)
-    rows = await repo.list_by_user(current_user.id, limit=100)
+    repo = ResumeRepository(ctx.session)
+    rows = await repo.list_by_user(ctx.user_id, limit=100)
     return [
         {
             "id": row.id,
@@ -44,17 +41,16 @@ async def list_documents(
 @router.get("/documents/{screening_id}")
 async def get_document(
     screening_id: str,
-    current_user: UserModel = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session),
+    ctx: CurrentUserDep,
 ) -> dict:
     """Return a single screening result if owned by the current user.
 
     Raises:
         HTTPException: 404 if not found or not owned.
     """
-    repo = ResumeRepository(session)
+    repo = ResumeRepository(ctx.session)
     row = await repo.get(screening_id)
-    if row is None or row.user_id != current_user.id:
+    if row is None or row.user_id != ctx.user_id:
         raise HTTPException(status_code=404, detail="Document not found")
     return {
         "id": row.id,

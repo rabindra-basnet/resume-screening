@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from app.services.learning_service import LearningService
 from app.services.resource_library import curated_resources_for_skill, has_curated_resources
 

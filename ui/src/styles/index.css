@@ -1,67 +1,10 @@
-/* ============================================================
- * AetherGate Design Tokens — single source of truth for UI values.
- *
- * All colors, fonts, radii, and spacing used across the app are
- * declared here as CSS custom properties. Components reference these
- * tokens (via the Tailwind theme above); **no UI value is hardcoded**
- * in a component.
- *
- * Swap this file to re-theme the entire application.
- * ============================================================ */
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/geist";
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-:root {
-  /* ---- Typography ---- */
-  --font-sans: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto,
-    "Helvetica Neue", Arial, sans-serif;
-  --font-mono: "SFMono-Regular", ui-monospace, "JetBrains Mono", Menlo,
-    Consolas, monospace;
-
-  /* ---- Surfaces (light, native) ---- */
-  --color-app-bg: #f6f7f9;
-  --color-app-surface: #ffffff;
-  --color-app-surface-alt: #eef1f5;
-
-  /* ---- Text ---- */
-  --color-text: #1f2329;
-  --color-text-muted: #5c636e;
-  --color-text-inverse: #ffffff;
-
-  /* ---- Borders ---- */
-  --color-border: #e0e4ea;
-  --color-border-strong: #c8ced8;
-
-  /* ---- Brand ---- */
-  --color-brand: #2f6bff;
-  --color-brand-hover: #1d55e8;
-  --color-brand-soft: #eaf0ff;
-
-  /* ---- Semantic status ---- */
-  --color-success: #1a9d55;
-  --color-success-soft: #e5f6ec;
-  --color-warning: #b7791f;
-  --color-warning-soft: #fdf3e0;
-  --color-danger: #d6455c;
-  --color-danger-soft: #fdeaea;
-  --color-info: #2f6bff;
-  --color-info-soft: #eaf0ff;
-
-  /* ---- Radii ---- */
-  --radius-sm: 6px;
-  --radius: 10px;
-  --radius-lg: 14px;
-
-  /* ---- Spacing ---- */
-  --space-gutter: 1.25rem;
-  --space-panel: 1.5rem;
-
-  /* ---- Elevation ---- */
-  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.06);
-  --shadow-md: 0 4px 16px rgba(16, 24, 40, 0.08);
-}
 
 @layer base {
   html {
@@ -70,61 +13,57 @@
   }
   body {
     margin: 0;
-    background-color: var(--color-app-bg);
-    color: var(--color-text);
-    font-family: var(--font-sans);
     line-height: 1.5;
   }
-}
-
-@layer components {
-  /* ATS-style card */
-  .panel {
-    background: var(--color-app-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
-    padding: var(--space-panel);
+  .theme {
+    --font-heading: var(--font-sans);
+    --font-sans: "Geist Variable", sans-serif;
   }
-  .label {
-    display: block;
-    font-size: 0.8125rem;
-    font-weight: 600;
-    color: var(--color-text);
-    margin-bottom: 0.375rem;
+  :root {
+    --background: #f8fafc;
+    --foreground: #0f172a;
+    --card: #ffffff;
+    --card-foreground: #0f172a;
+    --popover: #ffffff;
+    --popover-foreground: #0f172a;
+    --primary: #2563eb;
+    --primary-foreground: #ffffff;
+    --secondary: #f1f5f9;
+    --secondary-foreground: #0f172a;
+    --muted: #f1f5f9;
+    --muted-foreground: #475569;
+    --accent: #eff6ff;
+    --accent-foreground: #1e40af;
+    --destructive: #ef4444;
+    --destructive-foreground: #ffffff;
+    --border: #e2e8f0;
+    --input: #cbd5e1;
+    --ring: #3b82f6;
+    --chart-1: #2563eb;
+    --chart-2: #10b981;
+    --chart-3: #f59e0b;
+    --chart-4: #ef4444;
+    --chart-5: #8b5cf6;
+    --radius: 0.75rem;
+    --sidebar: #0f172a;
+    --sidebar-foreground: #f8fafc;
+    --sidebar-primary: #3b82f6;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #1e293b;
+    --sidebar-accent-foreground: #f8fafc;
+    --sidebar-border: #334155;
+    --sidebar-ring: #3b82f6;
   }
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    border-radius: var(--radius);
-    font-weight: 600;
-    font-size: 0.875rem;
-    padding: 0.5625rem 1rem;
-    cursor: pointer;
-    transition: background-color 0.15s ease, border-color 0.15s ease,
-      color 0.15s ease;
-    border: 1px solid transparent;
+  * {
+    @apply border-border;
   }
-  .btn:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
-  }
-  .btn-primary {
-    background: var(--color-brand);
-    color: var(--color-text-inverse);
-  }
-  .btn-primary:hover:not(:disabled) {
-    background: var(--color-brand-hover);
-  }
-  .btn-secondary {
-    background: var(--color-app-surface);
-    color: var(--color-text);
-    border-color: var(--color-border-strong);
-  }
-  .btn-secondary:hover:not(:disabled) {
-    background: var(--color-app-surface-alt);
+  body {
+    background-color: var(--background);
+    background-image: 
+      radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.04) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.04) 0px, transparent 50%);
+    background-attachment: fixed;
+    color: var(--foreground);
   }
 }
 
@@ -139,20 +78,5 @@
   to {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-
-.spinner {
-  display: inline-block;
-  width: 18px;
-  height: 18px;
-  border: 2px solid var(--color-border-strong);
-  border-top-color: var(--color-brand);
-  border-radius: 50%;
-  animation: spin 0.6s linear infinite;
-}
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
   }
 }

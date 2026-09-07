@@ -25,6 +25,9 @@ from app.api.v1 import (
     jd_router,
     learning_router,
     providers_router,
+    resume_chat_router,
+    resume_edit_router,
+    resume_review_router,
     screening_router,
 )
 from app.config.constants import API_V1_PREFIX
@@ -32,6 +35,7 @@ from app.config.settings import get_settings
 from app.core.errors import register_exception_handlers
 from app.core.logging import configure_logging
 from app.core.middleware import RequestContextMiddleware
+from app.core.telemetry import configure_sentry
 from app.database import get_database
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -39,7 +43,7 @@ UI_DIST = BASE_DIR / "ui" / "dist"
 
 logger = logging.getLogger(__name__)
 
-configure_logging()
+configure_logging(get_settings().log_level)
 
 
 @asynccontextmanager
@@ -54,6 +58,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """
     settings = get_settings()
     logger.info("Starting %s (%s)", settings.app_name, settings.app_env)
+    configure_sentry(
+        dsn=settings.sentry_dsn,
+        environment=settings.app_env,
+        traces_sample_rate=settings.sentry_traces_sample_rate,
+    )
     yield
     db = get_database()
     await db.dispose()
@@ -76,9 +85,20 @@ def create_app() -> FastAPI:
 
     app.add_middleware(RequestContextMiddleware)
 
+    # Restrict allowed origins for security when credentials are sent
+    allowed_origins = [
+        "http://localhost:5173",
+        "http://localhost:8000",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:8000",
+        "https://ats.saastralabs.com",
+    ]
+    if settings.app_origin and settings.app_origin not in allowed_origins:
+        allowed_origins.append(settings.app_origin.rstrip("/"))
+
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=allowed_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -87,9 +107,13 @@ def create_app() -> FastAPI:
     app.add_middleware(
         SessionMiddleware,
         secret_key=settings.session_secret,
-        session_cookie=settings.session_cookie_name,
+        # Dedicated cookie for the OAuth ``state`` hand-off. Using the same name
+        # as the auth cookie (session_cookie_name) makes the middleware clobber
+        # the signed user session issued by /callback/google.
+        session_cookie=settings.oauth_state_cookie_name,
         max_age=settings.session_cookie_max_age,
         same_site="lax",
+        https_only=settings.app_env == "production",
     )
 
     register_exception_handlers(app)
@@ -102,6 +126,9 @@ def create_app() -> FastAPI:
     app.include_router(providers_router, prefix=API_V1_PREFIX)
     app.include_router(learning_router, prefix=API_V1_PREFIX)
     app.include_router(external_jobs_router, prefix=API_V1_PREFIX)
+    app.include_router(resume_review_router, prefix=API_V1_PREFIX)
+    app.include_router(resume_edit_router, prefix=API_V1_PREFIX)
+    app.include_router(resume_chat_router, prefix=API_V1_PREFIX)
 
     # ── React SPA ──────────────────────────────────────────────────────
     # Serve the built React app (ui/dist) as a single-page application.

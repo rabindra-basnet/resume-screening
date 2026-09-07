@@ -5,9 +5,9 @@ from __future__ import annotations
 import io
 
 import pytest
+from app.tools.pdf_parser import PDFParser, PDFParsingError
 from pypdf import PdfWriter
 from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
-from app.tools.pdf_parser import PDFParser, PDFParsingError
 
 
 def _make_minimal_pdf(text: str = "Hello Resume") -> bytes:

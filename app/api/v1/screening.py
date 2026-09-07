@@ -5,15 +5,9 @@ from __future__ import annotations
 import logging
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import (
-    get_current_user,
-    get_screening_service,
-    get_session,
-)
+from app.api.deps import CurrentUserDep, get_screening_service
 from app.config.constants import ALLOWED_EXTENSIONS, MAX_UPLOAD_BYTES
-from app.database.schema import UserModel
 from app.services import ScreeningService
 from app.tools import DocumentParsingError
 
@@ -24,10 +18,9 @@ router = APIRouter(tags=["screening"])
 
 @router.post("/screening", summary="Screen a resume against a job description")
 async def screen_resume(
-    resume: UploadFile = File(...),
-    session: AsyncSession = Depends(get_session),
+    ctx: CurrentUserDep,
     service: ScreeningService = Depends(get_screening_service),
-    current_user: UserModel = Depends(get_current_user),
+    resume: UploadFile = File(...),
     jd_id: str | None = Form(default=None),
     job_description: str | None = Form(default=None),
     model_override: str | None = Form(default=None),
@@ -35,13 +28,12 @@ async def screen_resume(
     """Run a full resume screening against a stored or inline job description.
 
     Args:
+        ctx: Bundled session and authenticated user.
         resume: The resume file (PDF or DOCX) to screen.
         jd_id: Optional id of a stored job description.
         job_description: Optional inline job description text.
         model_override: Optional LLM model override.
-        session: Injected async database session (unused directly).
         service: The injected screening service.
-        current_user: The authenticated user.
 
     Returns:
         A dict containing the candidate profile, evaluation, learning plan,
@@ -73,7 +65,7 @@ async def screen_resume(
             jd_id=jd_id,
             job_description=job_description,
             model_override=model_override,
-            user_id=current_user.id,
+            user_id=ctx.user_id,
         )
     except DocumentParsingError as exc:
         raise HTTPException(status_code=400, detail=exc.message) from exc

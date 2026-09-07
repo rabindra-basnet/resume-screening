@@ -53,7 +53,20 @@ class Settings(BaseSettings):
     app_env: Literal["development", "production", "staging"] = "development"
     debug: bool = True
     database_url: str = "sqlite:///./screening.db"
-    app_origin: str = "http://localhost:8000"
+    # Public origin (e.g. https://ats.saastralabs.com). Leave empty to derive
+    # it from each request instead (see app.api.v1.auth._public_origin); set it
+    # explicitly when the app runs behind a proxy that rewrites the origin.
+    app_origin: str = ""
+
+    # ── Observability / logging ─────────────────────────────────────────
+    # Root log level for the application logger tree.
+    log_level: str = "INFO"
+    # Sentry DSN for error tracking / performance monitoring. Leave empty to
+    # keep local streamed logging only (no network calls). Free Developer tier
+    # covers 5k errors/mo; see https://sentry.io/pricing.
+    sentry_dsn: str = ""
+    # 0.0 disables performance tracing; 1.0 samples every request.
+    sentry_traces_sample_rate: float = 0.0
 
     # ── LLM provider ──────────────────────────────────────────────────
     llm_provider: str = "openai"
@@ -73,8 +86,16 @@ class Settings(BaseSettings):
     google_client_secret: str = ""
 
     # ── Session ────────────────────────────────────────────────────────
+    # Signs Starlette's OAuth ``state`` cookie (see oauth_state_cookie_name).
     session_secret: str = Field(default="", alias="session_secret")  # noqa: S105
+    # Cookie that holds the opaque id of the user's row in the ``sessions``
+    # table (created at Google login, storing the validated Google JWT).
     session_cookie_name: str = "aether_session"
+    # Separate cookie for Starlette's SessionMiddleware, which only carries the
+    # short-lived OAuth ``state`` between the /login/google and /callback/google
+    # requests. It MUST NOT share a name with the auth cookie above — if it did,
+    # the middleware would overwrite (and on callback, clear) the auth cookie.
+    oauth_state_cookie_name: str = "aether_oauth_state"
     session_cookie_max_age: int = 7 * 24 * 60 * 60  # 7 days
 
     # ── Storage (switchable) ───────────────────────────────────────────
@@ -119,9 +140,12 @@ class Settings(BaseSettings):
                     "(required when STORAGE_BACKEND=s3)"
                 )
 
-        if not self.session_secret or self.session_secret == "":
-            if self.app_env == "production":
-                errors.append("SESSION_SECRET_KEY is required in production")
+        if not self.session_secret:
+            if self.google_client_secret:
+                import hashlib
+                self.session_secret = hashlib.sha256(self.google_client_secret.encode()).hexdigest()
+            else:
+                self.session_secret = "talentpulse_default_session_secret_key_2026"  # noqa: S105
 
         if errors:
             raise ValueError("Configuration error: " + "; ".join(errors))

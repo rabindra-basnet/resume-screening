@@ -5,10 +5,9 @@ from __future__ import annotations
 import io
 
 import pytest
-from docx import Document
-
 from app.tools.document_parser import DocumentParser, DocumentParsingError
 from app.tools.docx_parser import DocxParser, DocxParsingError
+from docx import Document
 
 
 def _make_docx(text: str) -> bytes:
@@ -47,7 +46,6 @@ def test_docx_garbage_raises() -> None:
 
 def test_document_parser_routes_pdf_by_extension() -> None:
     """The unified parser routes a .pdf filename to the PDF handler."""
-    from app.tools import PDFParsingError
 
     with pytest.raises(DocumentParsingError):
         DocumentParser().extract_text(b"garbage", "resume.pdf")

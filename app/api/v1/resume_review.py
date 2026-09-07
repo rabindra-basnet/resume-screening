@@ -1,0 +1,81 @@
+"""Resume review endpoints for the v1 API."""
+
+from __future__ import annotations
+
+import logging
+
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+
+from app.api.deps import CurrentUserDep, get_resume_review_service
+from app.config.constants import ALLOWED_EXTENSIONS, MAX_UPLOAD_BYTES
+from app.services import ResumeReviewService
+from app.tools import DocumentParsingError
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(tags=["resume-review"])
+
+
+@router.post("/resume-review", summary="Run a resume review agent")
+async def run_resume_review(
+    ctx: CurrentUserDep,
+    service: ResumeReviewService = Depends(get_resume_review_service),
+    resume: UploadFile = File(...),
+    review_type: str = Form(default="full"),
+    industry: str = Form(default=""),
+    job_description: str = Form(default=""),
+    model_override: str | None = Form(default=None),
+) -> dict:
+    """Run one (or all) of the resume review agents on an uploaded resume.
+
+    Args:
+        ctx: Bundled session and authenticated user.
+        resume: The resume file (PDF or DOCX) to review.
+        review_type: Which review to run (full/brutal/ats/bullets/tone/polish).
+        industry: Optional free-form target industry (tone matching).
+        job_description: Optional JD text (ATS optimisation).
+        model_override: Optional LLM model override.
+        service: The injected resume review service.
+
+    Returns:
+        A dict with the review results and metadata.
+
+    Raises:
+        HTTPException: For validation errors or document parsing failures.
+    """
+    filename = (resume.filename or "").strip()
+    ext = filename.lower().rsplit(".", 1)[-1] if "." in filename else ""
+    if f".{ext}" not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail="Only PDF (.pdf) and Word (.docx) files are accepted",
+        )
+
+    content = await resume.read()
+    if len(content) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="File exceeds the 10MB limit")
+
+    if review_type not in ("full", "brutal", "ats", "bullets", "tone", "polish"):
+        raise HTTPException(
+            status_code=422,
+            detail="review_type must be one of full/brutal/ats/bullets/tone/polish",
+        )
+    if review_type == "ats" and not job_description:
+        raise HTTPException(
+            status_code=422, detail="job_description is required for ATS review"
+        )
+
+    try:
+        return await service.run_review(
+            content,
+            resume_filename=filename,
+            review_type=review_type,
+            industry=industry,
+            job_description=job_description,
+            model_override=model_override,
+            user_id=ctx.user_id,
+        )
+    except DocumentParsingError as exc:
+        raise HTTPException(status_code=400, detail=exc.message) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc

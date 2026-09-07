@@ -17,6 +17,8 @@ from app.agents.jd_extractor import JDGeneratorAgent
 from app.agents.llm_client import LLMClient
 from app.agents.orchestrator import AgentOrchestrator
 from app.agents.resume_extractor import ResumeExtractorAgent
+from app.api.deps import get_current_user, get_screening_service, get_session
+from app.database.schema import UserModel
 from app.main import create_app
 from app.models.job_description import JobDescription
 from app.services import ScreeningService
@@ -24,9 +26,6 @@ from fastapi import Depends
 from pypdf import PdfWriter
 from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.api.deps import get_current_user, get_screening_service, get_session
-from app.database.schema import UserModel
 
 
 def _make_minimal_pdf(text: str = "Hello Resume") -> bytes:
