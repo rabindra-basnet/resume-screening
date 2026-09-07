@@ -278,7 +278,7 @@ export function CvBuilder() {
       )}
 
       {/* Stepper header */}
-      <div className="rounded-2xl border border-border/60 bg-card/60 p-4 backdrop-blur">
+      <div className="rounded-2xl border border-border/80 bg-card/80 p-4 shadow-xs backdrop-blur">
         <div className="flex items-center justify-between gap-3">
           {STEPS.map((s, i) => {
             const isActive = step === s.key;
@@ -344,7 +344,7 @@ export function CvBuilder() {
           <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1.8fr)_minmax(360px,1fr)]">
             {/* LEFT: Resume upload + status + instructions */}
             <div className="space-y-6">
-              <Card className="border-border/60 bg-card/80 backdrop-blur shadow-sm">
+              <Card className="border-border/80 bg-card/90 backdrop-blur shadow-xs hover:shadow-sm transition-shadow">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <FileText size={18} className="text-primary" />
@@ -366,7 +366,7 @@ export function CvBuilder() {
 
               {/* Resume status / next steps when a file is selected */}
               {selectedFile ? (
-                <Card className="border-border/60 bg-card/80 backdrop-blur shadow-sm">
+                <Card className="border-border/80 bg-card/90 backdrop-blur shadow-xs">
                   <CardHeader className="pb-2">
                     <CardTitle className="flex items-center gap-2 text-base">
                       <ListChecks size={16} className="text-primary" />
@@ -385,7 +385,7 @@ export function CvBuilder() {
                   </CardContent>
                 </Card>
               ) : (
-                <Card className="border-border/60 bg-card/80 backdrop-blur shadow-sm">
+                <Card className="border-border/80 bg-card/90 backdrop-blur shadow-xs">
                   <CardHeader className="pb-2">
                     <CardTitle className="flex items-center gap-2 text-base">
                       <Layers size={16} className="text-primary" />
@@ -403,7 +403,7 @@ export function CvBuilder() {
                     ].map((item) => (
                       <div
                         key={item.label}
-                        className="flex items-center gap-2 rounded-xl border border-border/50 bg-muted/30 px-3 py-2 text-sm"
+                        className="flex items-center gap-2 rounded-xl border border-border/60 bg-muted/30 px-3 py-2 text-sm"
                       >
                         <item.icon size={15} className="text-primary shrink-0" />
                         <span className="text-muted-foreground">{item.label}</span>
@@ -415,7 +415,7 @@ export function CvBuilder() {
             </div>
 
             {/* RIGHT: Review configuration */}
-            <Card className="border-border/60 bg-card/80 backdrop-blur shadow-sm">
+            <Card className="border-border/80 bg-card/90 backdrop-blur shadow-xs hover:shadow-sm transition-shadow">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <Bot size={18} className="text-primary" />
@@ -436,17 +436,17 @@ export function CvBuilder() {
                         value={industry}
                         onChange={(e) => setIndustry(e.target.value)}
                         placeholder="e.g. fintech, healthtech, AI/SaaS"
-                        className="h-11"
+                        className="h-11 border-border/80 bg-background/50 focus:bg-background transition-colors"
                       />
                     </div>
 
                     <div>
-                      <Label className="mb-2 block text-sm font-semibold">Job Description Text (for ATS & Fit)</Label>
+                      <Label className="mb-2 block text-sm font-semibold">Job Description Text (for ATS &amp; Fit)</Label>
                       <Textarea
                         value={jobDescription}
                         onChange={(e) => setJobDescription(e.target.value)}
                         placeholder="Paste the target job description here — consumed by the agent pipeline for keyword and fit scoring..."
-                        className="min-h-[180px]"
+                        className="min-h-[180px] border-border/80 bg-background/50 focus:bg-background transition-colors"
                       />
                     </div>
                   </div>
@@ -462,7 +462,7 @@ export function CvBuilder() {
                     type="submit"
                     disabled={busyReview || !selectedFile}
                     size="lg"
-                    className="w-full gap-2 font-semibold"
+                    className="w-full gap-2 font-semibold shadow-xs"
                   >
                     {busyReview ? (
                       <>
