@@ -11,7 +11,7 @@ import { Skeleton } from "@/shared/components/ui/skeleton";
 import { GraduationCap, Search, Sparkles, Filter, Upload, Briefcase } from "lucide-react";
 import { ResourceGroupCard } from "../components/ResourceCard";
 
-export default function LearningPage() {
+export default function LearningPage({ embedded = false }: { embedded?: boolean }) {
   const navigate = useNavigate();
   const searchParams = useSearch({ from: "/_workspace/learning" });
   const [query, setQuery] = useState(searchParams.q || "");
@@ -70,59 +70,63 @@ export default function LearningPage() {
   return (
     <div className="space-y-8 fade-in">
       {/* Header */}
-      <div className="space-y-2">
-        <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-          <Sparkles size={13} /> Agentic Talent Workspace
-        </div>
-        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-          Learning Roadmap
-        </h1>
-        <p className="max-w-2xl text-muted-foreground">
-          Targeted courses, tutorials, and materials recommended to close skill gaps discovered during candidate resume screenings.
-        </p>
-      </div>
+      {!embedded && (
+        <>
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+              <Sparkles size={13} /> Agentic Talent Workspace
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+              Learning Roadmap
+            </h1>
+            <p className="max-w-2xl text-muted-foreground">
+              Targeted courses, tutorials, and materials recommended to close skill gaps discovered during candidate resume screenings.
+            </p>
+          </div>
 
-      {/* Single Workspace Navigation Tabs */}
-      <div className="flex items-center justify-between border-b border-border/60">
-        <div className="flex items-center gap-1">
-          <Link
-            to="/screen"
-            activeProps={{
-              className: "border-primary text-primary font-bold",
-            }}
-            inactiveProps={{
-              className: "border-transparent text-muted-foreground hover:text-foreground",
-            }}
-            className="flex items-center gap-2 rounded-t-lg border-b-2 px-4 py-2.5 font-semibold text-sm transition-all"
-          >
-            <Upload size={16} /> Screen Resume
-          </Link>
-          <Link
-            to="/jobs"
-            activeProps={{
-              className: "border-primary text-primary font-bold",
-            }}
-            inactiveProps={{
-              className: "border-transparent text-muted-foreground hover:text-foreground",
-            }}
-            className="flex items-center gap-2 rounded-t-lg border-b-2 px-4 py-2.5 font-semibold text-sm transition-all"
-          >
-            <Briefcase size={16} /> Job Descriptions
-          </Link>
-          <Link
-            to="/learning"
-            activeProps={{
-              className: "border-primary text-primary font-bold",
-            }}
-            inactiveProps={{
-              className: "border-transparent text-muted-foreground hover:text-foreground",
-            }}
-            className="flex items-center gap-2 rounded-t-lg border-b-2 px-4 py-2.5 font-semibold text-sm transition-all"
-          >
-            <GraduationCap size={16} /> Learning Roadmap
-          </Link>
-        </div>
-      </div>
+          {/* Single Workspace Navigation Tabs */}
+          <div className="flex items-center justify-between border-b border-border/60">
+            <div className="flex items-center gap-1">
+              <Link
+                to="/screen"
+                activeProps={{
+                  className: "border-primary text-primary font-bold",
+                }}
+                inactiveProps={{
+                  className: "border-transparent text-muted-foreground hover:text-foreground",
+                }}
+                className="flex items-center gap-2 rounded-t-lg border-b-2 px-4 py-2.5 font-semibold text-sm transition-all"
+              >
+                <Upload size={16} /> Screen Resume
+              </Link>
+              <Link
+                to="/jobs"
+                activeProps={{
+                  className: "border-primary text-primary font-bold",
+                }}
+                inactiveProps={{
+                  className: "border-transparent text-muted-foreground hover:text-foreground",
+                }}
+                className="flex items-center gap-2 rounded-t-lg border-b-2 px-4 py-2.5 font-semibold text-sm transition-all"
+              >
+                <Briefcase size={16} /> Job Descriptions
+              </Link>
+              <Link
+                to="/learning"
+                activeProps={{
+                  className: "border-primary text-primary font-bold",
+                }}
+                inactiveProps={{
+                  className: "border-transparent text-muted-foreground hover:text-foreground",
+                }}
+                className="flex items-center gap-2 rounded-t-lg border-b-2 px-4 py-2.5 font-semibold text-sm transition-all"
+              >
+                <GraduationCap size={16} /> Learning Roadmap
+              </Link>
+            </div>
+          </div>
+        </>
+      )}
 
       <Card className="border-border/60 bg-card/80 backdrop-blur shadow-sm">
         <CardContent className="p-4">
