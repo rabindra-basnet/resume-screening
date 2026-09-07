@@ -210,11 +210,22 @@ uv run vercel --prod      # static UI + API function in one deploy
 
 - [x] Modular backend with provider-agnostic LLM agents
 - [x] React (Vite) frontend mounted to the FastAPI API
+- [x] Responsive 2-column Agentic Workspace (`/screen`) with flexible main column & fixed configuration panel
+- [x] Soft, eye-friendly Slate & Indigo UI theme with full dark mode support
 - [x] Google OAuth sign-in with DB-backed sessions + server-side Google JWT
 - [x] Persistence (SQLite dev / Neon Postgres prod), result + JD repositories
 - [x] Vercel Web Analytics + Speed Insights, BotID protection
 - [ ] Batch/parallel resume screening
 - [ ] Storage backend selection (Vercel Blob vs AWS S3) for saved resumes
+
+## Troubleshooting & Serverless Notes
+
+- **Read-Only Filesystem Warning (`[Errno 30]` on `/var/task/logs/`)**:
+  Vercel serverless environments mount read-only filesystems. File-based logging is automatically bypassed in production (`APP_ENV=production` or read-only filesystem detection in `app/core/logging.py`), falling back to `stdout` which Vercel platform collects.
+- **`Removed virtual environment at /tmp/_vc_deps`**:
+  Standard Vercel deployment lifecycle behavior during build bundle cleanup.
+- **`{"error": "internal_error"}` on Production**:
+  Emitted by FastAPI's unhandled exception handler when a server-side exception occurs (most commonly caused by missing Vercel environment variables such as `DATABASE_URL`, `SESSION_SECRET`, `GOOGLE_CLIENT_ID`, or `LLM_API_KEY`). Ensure all production secrets are configured in the Vercel project settings.
 
 ## License
 

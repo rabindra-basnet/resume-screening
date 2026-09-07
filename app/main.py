@@ -35,7 +35,6 @@ from app.config.settings import get_settings
 from app.core.errors import register_exception_handlers
 from app.core.logging import configure_logging
 from app.core.middleware import RequestContextMiddleware
-from app.core.telemetry import configure_sentry
 from app.database import get_database
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -44,9 +43,13 @@ UI_DIST = BASE_DIR / "ui" / "dist"
 logger = logging.getLogger(__name__)
 
 settings = get_settings()
+# Serverless platforms (Vercel) mount a read-only filesystem; file logging is
+# a local-dev convenience only. In production, logs go to stdout (the console),
+# which the platform collects.
+verbose = settings.app_env in ("development", "staging")
 configure_logging(
-    file_path=f"logs/{settings.app_env}.log",
-    verbose=settings.app_env in ("development", "staging"),
+    file_path=None if settings.app_env == "production" else f"logs/{settings.app_env}.log",
+    verbose=verbose,
 )
 
 
@@ -62,11 +65,6 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """
     settings = get_settings()
     logger.info("Starting %s (%s)", settings.app_name, settings.app_env)
-    configure_sentry(
-        dsn=settings.sentry_dsn,
-        environment=settings.app_env,
-        traces_sample_rate=settings.sentry_traces_sample_rate,
-    )
     yield
     db = get_database()
     await db.dispose()

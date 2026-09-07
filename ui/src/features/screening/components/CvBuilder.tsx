@@ -39,6 +39,17 @@ import {
   CheckCircle2,
   Rocket,
   Check,
+  Target,
+  ListChecks,
+  Wrench,
+  LineChart,
+  GraduationCap,
+  Layers,
+  Bot,
+  AlertTriangle,
+  PenTool,
+  Mic,
+  Star,
 } from "lucide-react";
 
 
@@ -327,92 +338,162 @@ export function CvBuilder() {
         </div>
       </div>
 
-      {/* Stacked Workspace Layout: Form Inputs Top, Agent Results Below */}
+      {/* Workspace Layout: two-column on desktop, stacked on mobile */}
       <div className="space-y-8">
-        {/* Top Section: Inputs & Actions */}
-        <div className="w-full">
-          {step === "review" && (
+        {step === "review" && (
+          <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1.8fr)_minmax(360px,1fr)]">
+            {/* LEFT: Resume upload + status + instructions */}
+            <div className="space-y-6">
+              <Card className="border-border/60 bg-card/80 backdrop-blur shadow-sm">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <FileText size={18} className="text-primary" />
+                    Upload &amp; Review
+                  </CardTitle>
+                  <CardDescription>
+                    Drop your resume to start the multi-agent screening evaluation.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResumeDropzone
+                    selectedFile={selectedFile}
+                    dragging={dragging}
+                    setDragging={setDragging}
+                    onSelectFile={setSelectedFile}
+                  />
+                </CardContent>
+              </Card>
+
+              {/* Resume status / next steps when a file is selected */}
+              {selectedFile ? (
+                <Card className="border-border/60 bg-card/80 backdrop-blur shadow-sm">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <ListChecks size={16} className="text-primary" />
+                      Resume Status
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2 text-sm">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <CheckCircle2 size={15} className="text-emerald-500 shrink-0" />
+                      <span className="font-medium text-foreground">{selectedFile.name}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Configure the target industry and job description on the right, then run the
+                      pipeline to analyze ATS fit, structure, skills, and tone.
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card className="border-border/60 bg-card/80 backdrop-blur shadow-sm">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Layers size={16} className="text-primary" />
+                      What gets analyzed
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {[
+                      { icon: Target, label: "ATS compatibility" },
+                      { icon: FileText, label: "Resume structure" },
+                      { icon: ListChecks, label: "Skill alignment" },
+                      { icon: LineChart, label: "Job-description match" },
+                      { icon: Wrench, label: "Missing skills" },
+                      { icon: GraduationCap, label: "Improvement tips" },
+                    ].map((item) => (
+                      <div
+                        key={item.label}
+                        className="flex items-center gap-2 rounded-xl border border-border/50 bg-muted/30 px-3 py-2 text-sm"
+                      >
+                        <item.icon size={15} className="text-primary shrink-0" />
+                        <span className="text-muted-foreground">{item.label}</span>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            {/* RIGHT: Review configuration */}
             <Card className="border-border/60 bg-card/80 backdrop-blur shadow-sm">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
-                  <FileText size={18} className="text-primary" />
-                  Upload &amp; Review
+                  <Bot size={18} className="text-primary" />
+                  Review Configuration
                 </CardTitle>
                 <CardDescription>
-                  Upload your candidate resume and target details. The Agent Orchestrator will automatically invoke specialized agents (Brutal Review, ATS Optimizer, Bullet Transformer, Tone Matcher, and Polish).
+                  Target details consumed by the agent pipeline.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={runReview} className="space-y-5">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <ResumeDropzone
-                      selectedFile={selectedFile}
-                      dragging={dragging}
-                      setDragging={setDragging}
-                      onSelectFile={setSelectedFile}
-                    />
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="mb-2 block text-sm font-semibold">
+                        Target Industry <span className="font-normal text-muted-foreground">(optional)</span>
+                      </Label>
+                      <Input
+                        value={industry}
+                        onChange={(e) => setIndustry(e.target.value)}
+                        placeholder="e.g. fintech, healthtech, AI/SaaS"
+                        className="h-11"
+                      />
+                    </div>
 
-                    <div className="space-y-4">
-                      <div>
-                        <Label className="mb-2 block text-sm font-semibold">
-                          Target Industry <span className="font-normal text-muted-foreground">(optional)</span>
-                        </Label>
-                        <Input
-                          value={industry}
-                          onChange={(e) => setIndustry(e.target.value)}
-                          placeholder="e.g. fintech, healthtech, AI/SaaS"
-                        />
-                      </div>
-
-                      <div>
-                        <Label className="mb-2 block text-sm font-semibold">Job Description Text (for ATS & Fit)</Label>
-                        <Textarea
-                          value={jobDescription}
-                          onChange={(e) => setJobDescription(e.target.value)}
-                          placeholder="Paste the target job description here — consumed by the agent pipeline for keyword and fit scoring..."
-                          className="min-h-[120px]"
-                        />
-                      </div>
+                    <div>
+                      <Label className="mb-2 block text-sm font-semibold">Job Description Text (for ATS & Fit)</Label>
+                      <Textarea
+                        value={jobDescription}
+                        onChange={(e) => setJobDescription(e.target.value)}
+                        placeholder="Paste the target job description here — consumed by the agent pipeline for keyword and fit scoring..."
+                        className="min-h-[180px]"
+                      />
                     </div>
                   </div>
 
                   <Separator />
 
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <p className="text-xs text-muted-foreground leading-relaxed max-w-xl">
-                      Clicking Run Review initiates the <strong>Agent Orchestrator</strong>, triggering multi-agent structural, ATS, bullet, tone, and quality evaluations.
-                    </p>
-                    <Button type="submit" disabled={busyReview || !selectedFile} size="lg" className="w-full sm:w-auto gap-2 font-semibold px-8">
-                      {busyReview ? (
-                        <>
-                          <RefreshCw className="animate-spin" size={18} />
-                          Orchestrating Agents…
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles size={18} />
-                          Run Agent Review Pipeline
-                        </>
-                      )}
-                    </Button>
-                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Runs the <strong>Agent Orchestrator</strong> — structural, ATS, bullet, tone, and
+                    quality evaluations in parallel.
+                  </p>
+
+                  <Button
+                    type="submit"
+                    disabled={busyReview || !selectedFile}
+                    size="lg"
+                    className="w-full gap-2 font-semibold"
+                  >
+                    {busyReview ? (
+                      <>
+                        <RefreshCw className="animate-spin" size={18} />
+                        Orchestrating Agents…
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles size={18} />
+                        Run Agent Review Pipeline
+                      </>
+                    )}
+                  </Button>
                 </form>
               </CardContent>
             </Card>
-          )}
+          </div>
+        )}
 
-          {step === "chat" && (
-            <Card className="border-border/60 bg-card/80 backdrop-blur shadow-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MessageSquare size={18} className="text-primary" />
-                  Agent Interactive Controls
-                </CardTitle>
-                <CardDescription>
-                  Instruct the agent to apply automated edits, check application readiness, or undo previous revisions.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
+        {step === "chat" && (
+          <Card className="border-border/60 bg-card/80 backdrop-blur shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare size={18} className="text-primary" />
+                Agent Interactive Controls
+              </CardTitle>
+              <CardDescription>
+                Instruct the agent to apply automated edits, check application readiness, or undo previous revisions.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
                 <div className="space-y-3 rounded-xl border border-border/60 bg-muted/30 p-4">
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2 text-sm font-semibold">
@@ -497,7 +578,6 @@ export function CvBuilder() {
               </CardContent>
             </Card>
           )}
-        </div>
 
         {/* Bottom Section: Agent Results & Feedback (Positioned below the form) */}
         <div className="w-full space-y-6">
@@ -542,20 +622,40 @@ export function CvBuilder() {
 
           {step === "review" && !reviewReady && !busyReview && (
             <Card className="border-dashed border-border/80 bg-card/40">
-              <CardContent className="py-16 text-center space-y-3">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
-                  <Sparkles size={24} />
+              <CardContent className="px-6 py-14 text-center space-y-5">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-primary/10 text-primary">
+                  <Sparkles size={30} />
                 </div>
-                <h3 className="text-base font-semibold">Agent Feedback Pipeline Ready</h3>
-                <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                  Upload a PDF/DOCX resume above to execute the multi-agent screening evaluation. Results will appear right here.
-                </p>
+                <div className="space-y-1.5">
+                  <h3 className="text-xl font-semibold">Agent Feedback Pipeline Ready</h3>
+                  <p className="text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">
+                    Upload a PDF/DOCX resume above to start the multi-agent screening evaluation.
+                    Results will appear right here.
+                  </p>
+                </div>
+                <div className="mx-auto grid max-w-2xl grid-cols-1 gap-2 sm:grid-cols-5">
+                  {[
+                    { icon: AlertTriangle, label: "Brutal Review" },
+                    { icon: Target, label: "ATS Optimizer" },
+                    { icon: PenTool, label: "Bullet Transformer" },
+                    { icon: Mic, label: "Tone Matcher" },
+                    { icon: Star, label: "Final Polish" },
+                  ].map((agent) => (
+                    <div
+                      key={agent.label}
+                      className="flex items-center gap-2 rounded-xl border border-border/50 bg-muted/40 px-3 py-2.5 sm:flex-col sm:gap-1.5 sm:py-3 sm:text-center"
+                    >
+                      <agent.icon size={16} className="text-primary shrink-0" />
+                      <span className="text-xs font-medium text-muted-foreground">{agent.label}</span>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           )}
 
           {step === "chat" && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-6">
               <Card className="border-border/60 bg-card/80 backdrop-blur shadow-sm">
                 <CardHeader className="flex-row items-center justify-between space-y-0">
                   <div>

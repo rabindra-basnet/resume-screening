@@ -6,8 +6,8 @@ import logging
 import time
 from typing import Annotated
 
-import litellm
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from openai import OpenAI
 
 from app.api.deps import get_provider_repo
 from app.database.repositories import ProviderRepository
@@ -49,8 +49,8 @@ def _to_read(row: AIProviderModel) -> ProviderRead:
     )
 
 
-def _validate_litellm(provider: AIProviderModel, api_key: str) -> tuple[bool, str]:
-    """Attempt a minimal LiteLLM completion and report success or failure.
+def _validate_provider(provider: AIProviderModel, api_key: str) -> tuple[bool, str]:
+    """Attempt a minimal OpenAI completion and report success or failure.
 
     Args:
         provider: The provider row holding model and endpoint details.
@@ -60,18 +60,15 @@ def _validate_litellm(provider: AIProviderModel, api_key: str) -> tuple[bool, st
         A tuple of ``(bool, message)`` where the bool indicates success.
     """
     params: dict = {"api_key": api_key}
-    model = provider.model
     if provider.api_base:
-        params["api_base"] = provider.api_base
-        if not model.startswith("openai/"):
-            model = f"openai/{model}"
+        params["base_url"] = provider.api_base
     try:
-        response = litellm.completion(
-            model=model,
+        client = OpenAI(**params)
+        response = client.chat.completions.create(
+            model=provider.model,
             messages=[{"role": "user", "content": "ping"}],
             max_tokens=5,
             timeout=10,
-            **params,
         )
         _ = response.choices[0].message.content
         return True, "API key validated successfully"
@@ -276,7 +273,7 @@ async def validate_provider(
     provider_id: str,
     repo: Annotated[ProviderRepository, Depends(get_provider_repo)],
 ) -> ProviderValidateResponse:
-    """Test the provider's API key with a minimal LiteLLM completion.
+    """Test the provider's API key with a minimal OpenAI completion.
 
     Args:
         provider_id: The provider primary key.
@@ -293,7 +290,7 @@ async def validate_provider(
         raise HTTPException(status_code=404, detail="Provider not found")
 
     start = time.monotonic()
-    success, message = _validate_litellm(row, repo.decrypt_key(row))
+    success, message = _validate_provider(row, repo.decrypt_key(row))
     latency_ms = int((time.monotonic() - start) * 1000)
 
     await repo.update(provider_id, is_validated=success)

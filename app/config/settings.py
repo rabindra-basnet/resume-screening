@@ -58,14 +58,6 @@ class Settings(BaseSettings):
     # explicitly when the app runs behind a proxy that rewrites the origin.
     app_origin: str = ""
 
-    # ── Observability / logging ─────────────────────────────────────────
-    # Sentry DSN for error tracking / performance monitoring. Leave empty to
-    # keep local streamed logging only (no network calls). Free Developer tier
-    # covers 5k errors/mo; see https://sentry.io/pricing.
-    sentry_dsn: str = ""
-    # 0.0 disables performance tracing; 1.0 samples every request.
-    sentry_traces_sample_rate: float = 0.0
-
     # ── LLM provider ──────────────────────────────────────────────────
     llm_provider: str = "openai"
     llm_model: str = "gpt-4o-mini"

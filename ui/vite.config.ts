@@ -32,6 +32,8 @@ export default defineConfig({
           react: ["react", "react-dom"],
           router: ["@tanstack/react-router", "@tanstack/react-store"],
           icons: ["lucide-react"],
+          baseui: ["@base-ui/react"],
+          http: ["axios"],
         },
       },
     },

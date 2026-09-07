@@ -15,7 +15,7 @@ export default function Layout() {
     <div className="flex min-h-screen flex-col bg-background text-foreground selection:bg-primary selection:text-primary-foreground font-sans">
       {/* Header Navigation */}
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
+        <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between gap-4 px-4 sm:px-8">
           {/* Brand Logo */}
           <Link to="/" className="flex items-center gap-3 no-underline group">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm transition-transform group-hover:scale-105">
@@ -93,13 +93,13 @@ export default function Layout() {
       </header>
 
       {/* Main Content Area */}
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 sm:px-6 py-8">
+      <main className="mx-auto w-full max-w-[1400px] flex-1 px-4 sm:px-8 py-8">
         <Outlet />
       </main>
 
       {/* Clean Minimal Footer */}
       <footer className="border-t border-border/40 py-6 bg-card/20 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 text-xs text-muted-foreground">
+        <div className="mx-auto flex max-w-[1400px] items-center justify-between px-4 sm:px-8 text-xs text-muted-foreground">
           <span>© TalentPulse AI</span>
         </div>
       </footer>

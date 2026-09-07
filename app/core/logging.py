@@ -57,10 +57,28 @@ def _new_handler() -> _MarkerHandler:
     return handler
 
 
+def _is_writable_location(path: str) -> bool:
+    """Return True if ``path`` sits on a writable filesystem.
+
+    Serverless platforms (Vercel) mount read-only filesystems; probing avoids a
+    mid-attempt RotatingFileHandler failure and keeps those logs on the console.
+    """
+    try:
+        target = Path(path)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        with target.open("a", encoding="utf-8"):
+            pass
+        return True
+    except OSError:
+        return False
+
+
 def _add_file_handler(path: str, *, max_bytes: int, backup_count: int) -> None:
     """Add a rotating file handler for ``path`` if not already installed.
 
     Idempotent per path: repeated calls (tests, reload) do not stack handlers.
+    When the target filesystem is read-only, no handler is attached and the
+    request is skipped (logs stay on the console).
 
     Args:
         path: Absolute or relative log file path.
@@ -68,6 +86,8 @@ def _add_file_handler(path: str, *, max_bytes: int, backup_count: int) -> None:
         backup_count: Number of rotated backups to keep.
     """
     if path in _installed_files:
+        return
+    if not _is_writable_location(path):
         return
     try:
         target = Path(path)
@@ -82,8 +102,8 @@ def _add_file_handler(path: str, *, max_bytes: int, backup_count: int) -> None:
         handler.addFilter(RequestIdFilter())
         logging.getLogger().addHandler(handler)
         _installed_files.add(path)
-    except Exception as exc:
-        logging.warning("File logging unavailable (e.g. read-only filesystem): %s", exc)
+    except Exception as exc:  # noqa: BLE001 - logging must never crash the app
+        logging.warning("File logging unavailable on this filesystem; using console only: %s", exc)
 
 
 def configure_logging(
@@ -108,7 +128,10 @@ def configure_logging(
             (e.g. ``"DEBUG"``, ``"INFO"``). Strings are resolved via
             :func:`logging.getLevelName`.
         file_path: Path for a local rotating file handler. Pass ``None`` for
-            console-only output. Defaults to ``logs/dev.log``.
+            console-only output. Defaults to ``logs/dev.log``. On read-only
+            filesystems (e.g. Vercel's ``/var/task``), the file handler is
+            skipped silently and logs flow to the console, which serverless
+            platforms collect.
         max_bytes: Rotate the file handler at this size (bytes).
         backup_count: Number of rotated file backups to keep.
         verbose: When True, keep uvicorn access/error logs at INFO so every
