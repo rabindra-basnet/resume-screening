@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useLoaderData } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { apiGet, errMsg } from "@/shared/api/client";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
@@ -10,27 +10,28 @@ import { AccountMetrics, type AccountDocument } from "../components/AccountMetri
 import { DocumentCard } from "../components/DocumentCard";
 
 export default function AccountPage() {
-  const initialDocs = useLoaderData({ from: "/_workspace/account" }) as AccountDocument[] | undefined;
-  const [docs, setDocs] = useState<AccountDocument[]>(initialDocs || []);
-  const [loading, setLoading] = useState(!initialDocs);
+  const [docs, setDocs] = useState<AccountDocument[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
   useEffect(() => {
-    if (!initialDocs) {
-      (async () => {
-        try {
-          const data = await apiGet<AccountDocument[]>("/account/documents");
-          setDocs(data);
-        } catch (err) {
-          setError(errMsg(err));
-        } finally {
-          setLoading(false);
-        }
-      })();
-    }
-  }, [initialDocs]);
+    let isMounted = true;
+    (async () => {
+      try {
+        const data = await apiGet<AccountDocument[]>("/account/documents");
+        if (isMounted) setDocs(data || []);
+      } catch (err) {
+        if (isMounted) setError(errMsg(err));
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const filteredDocs = docs.filter((doc) => {
     const matchesSearch = (doc.resume_filename || "unnamed")
