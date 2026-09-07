@@ -62,8 +62,12 @@ export default function LearningPage() {
 
   return (
     <div className="space-y-8 fade-in">
-      {/* Header */}
-
+      <div className="space-y-1">
+        <h2 className="text-2xl font-bold tracking-tight">Learning Roadmap</h2>
+        <p className="text-muted-foreground">
+          Recommended learning paths and skill-building resources based on screening feedback.
+        </p>
+      </div>
 
       <Card className="border-border/60 bg-card/80 backdrop-blur shadow-sm">
         <CardContent className="p-4">
