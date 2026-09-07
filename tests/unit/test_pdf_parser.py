@@ -68,34 +68,3 @@ def test_extract_text_garbage_raises() -> None:
     """Invalid PDF bytes raise a typed PDFParsingError."""
     with pytest.raises(PDFParsingError):
         PDFParser().extract_text(b"this is not a pdf at all")
-
-
-def test_extract_text_falls_back_to_ocr_when_no_text_layer(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """A text-less (outlined/scanned) PDF is recovered via the OCR fallback."""
-    pdf_bytes = _make_minimal_pdf()
-
-    pdf_parser = PDFParser()
-    monkeypatch.setattr(pdf_parser, "_extract_text_layer", lambda _b: "")
-    monkeypatch.setattr(pdf_parser, "_extract_with_pymupdf", lambda _b: "")
-
-    fake_rapidocr_mod = types.ModuleType("rapidocr")
-
-    class _FakeRapidOCR:
-        def __call__(self, image: object) -> _FakeOcrOutput:  # noqa: D102
-            return _FakeOcrOutput(["O C R    L I N E 1", "O C R    L I N E 2"])
-
-    fake_rapidocr_mod.RapidOCR = _FakeRapidOCR  # type: ignore[attr-defined]
-
-    with patch.dict(sys.modules, {"pymupdf": MagicMock(), "rapidocr": fake_rapidocr_mod}):
-        fake_pymupdf = sys.modules["pymupdf"]
-        fake_pymupdf.open.return_value = fake_pymupdf
-        fake_pymupdf.__len__.return_value = 1  # type: ignore[attr-defined]
-        fake_pymupdf.__getitem__.return_value.get_pixmap.return_value.tobytes.return_value = (
-            b"png-bytes"
-        )
-        text = pdf_parser.extract_text(pdf_bytes)
-
-    assert "O C R" in text
-    assert "L I N E 1" in text
