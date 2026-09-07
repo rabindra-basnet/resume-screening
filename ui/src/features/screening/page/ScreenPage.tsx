@@ -7,44 +7,46 @@ import LearningPage from "@/features/learning/page/LearningPage";
 
 export default function ScreenPage() {
   return (
-    <div className="space-y-8 fade-in">
-      {/* Header */}
-      <div className="space-y-2">
-        <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-          <Sparkles size={13} /> Agentic Talent Workspace
-        </div>
-        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-          Get your resume ready in three steps
-        </h1>
-        <p className="max-w-2xl text-muted-foreground">
-          Upload a resume, let the AI agents make it ATS- and hiring-tool-friendly, iterate via
-          chat, then learn the skills you're missing before you apply.
-        </p>
-      </div>
-
-      {/* Single Screen Tabs Container */}
+    <div className="w-full space-y-8 fade-in">
+      {/* Workspace Tabs Container */}
       <Tabs defaultValue="screen" className="w-full space-y-6">
-        <div className="flex items-center justify-between border-b border-border/60">
-          <TabsList className="h-auto gap-1 bg-transparent p-0">
-            <TabsTrigger
-              value="screen"
-              className="gap-2 rounded-t-lg border-b-2 border-transparent px-4 py-2.5 font-semibold text-sm transition-all data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary"
-            >
-              <Upload size={16} /> Screen Resume
-            </TabsTrigger>
-            <TabsTrigger
-              value="jobs"
-              className="gap-2 rounded-t-lg border-b-2 border-transparent px-4 py-2.5 font-semibold text-sm transition-all data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary"
-            >
-              <Briefcase size={16} /> Job Descriptions
-            </TabsTrigger>
-            <TabsTrigger
-              value="learning"
-              className="gap-2 rounded-t-lg border-b-2 border-transparent px-4 py-2.5 font-semibold text-sm transition-all data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary"
-            >
-              <GraduationCap size={16} /> Learning Roadmap
-            </TabsTrigger>
-          </TabsList>
+        {/* Header & Tabs bar */}
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+              <Sparkles size={13} /> Agentic Talent Workspace
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+              Get your resume ready in three steps
+            </h1>
+            <p className="max-w-2xl text-muted-foreground">
+              Upload a resume, let the AI agents make it ATS- and hiring-tool-friendly, iterate via
+              chat, then learn the skills you're missing before you apply.
+            </p>
+          </div>
+
+          <div className="border-b border-border/60">
+            <TabsList className="h-auto gap-2 bg-transparent p-0">
+              <TabsTrigger
+                value="screen"
+                className="gap-2 rounded-t-xl border-b-2 border-transparent px-5 py-3 font-semibold text-sm transition-all data-[state=active]:border-primary data-[state=active]:bg-primary/5 data-[state=active]:text-primary"
+              >
+                <Upload size={16} /> Screen Resume
+              </TabsTrigger>
+              <TabsTrigger
+                value="jobs"
+                className="gap-2 rounded-t-xl border-b-2 border-transparent px-5 py-3 font-semibold text-sm transition-all data-[state=active]:border-primary data-[state=active]:bg-primary/5 data-[state=active]:text-primary"
+              >
+                <Briefcase size={16} /> Job Descriptions
+              </TabsTrigger>
+              <TabsTrigger
+                value="learning"
+                className="gap-2 rounded-t-xl border-b-2 border-transparent px-5 py-3 font-semibold text-sm transition-all data-[state=active]:border-primary data-[state=active]:bg-primary/5 data-[state=active]:text-primary"
+              >
+                <GraduationCap size={16} /> Learning Roadmap
+              </TabsTrigger>
+            </TabsList>
+          </div>
         </div>
 
         {/* Tab 1: Screen Resume Workspace */}

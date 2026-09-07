@@ -31,7 +31,10 @@ _installed_files: set[str] = set()
 # Defaults baked into the config — these are the defaults unless explicitly
 # overridden at the call site (no env vars required).
 DEFAULT_LOG_LEVEL = logging.INFO
-DEFAULT_LOG_FILE: str | None = None
+# Where console-only mode is desired, pass file_path=None explicitly. By
+# default every feature's log propagates to the root logger and is mirrored
+# into logs/{app_env}.log alongside stdout.
+DEFAULT_LOG_FILE: str = "logs/dev.log"
 DEFAULT_LOG_FILE_MAX_BYTES = 10 * 1024 * 1024
 DEFAULT_LOG_FILE_BACKUP_COUNT = 3
 DEFAULT_VERBOSE = False
@@ -92,16 +95,22 @@ def configure_logging(
 
     Idempotent: re-running this does not duplicate handlers.
 
+    Configured ``configure_logging`` mirrors every log record — from all
+    feature modules — to stdout and (by default) to ``logs/{app_env}.log``.
+    Because child loggers propagate to the configured root logger, request
+    logs, agent activity, services, and tools all land in the same file.
+
     Args:
         level: The minimum log level to emit, as an int or level name
             (e.g. ``"DEBUG"``, ``"INFO"``). Strings are resolved via
             :func:`logging.getLevelName`.
-        file_path: Optional path for a local rotating file handler.
+        file_path: Path for a local rotating file handler. Pass ``None`` for
+            console-only output. Defaults to ``logs/dev.log``.
         max_bytes: Rotate the file handler at this size (bytes).
         backup_count: Number of rotated file backups to keep.
         verbose: When True, keep uvicorn access/error logs at INFO so every
-            request appears in the console (development). When False, throttle
-            uvicorn's access logger to WARNING for quieter serverless output.
+            request appears in the console/file (development). When False,
+            throttle uvicorn's access logger to WARNING for quieter output.
     """
     if isinstance(level, str):
         level = logging.getLevelName(level.upper())

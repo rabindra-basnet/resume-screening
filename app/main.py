@@ -44,7 +44,10 @@ UI_DIST = BASE_DIR / "ui" / "dist"
 logger = logging.getLogger(__name__)
 
 settings = get_settings()
-configure_logging(verbose=settings.app_env in ("development", "staging"))
+configure_logging(
+    file_path=f"logs/{settings.app_env}.log",
+    verbose=settings.app_env in ("development", "staging"),
+)
 
 
 @asynccontextmanager
