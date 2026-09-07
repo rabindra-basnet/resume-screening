@@ -6,8 +6,9 @@ import logging
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
-from app.api.deps import CurrentUserDep, get_resume_review_service
+from app.api.deps import get_current_user_or_none, get_resume_review_service
 from app.config.constants import ALLOWED_EXTENSIONS, MAX_UPLOAD_BYTES
+from app.database.schema import UserModel
 from app.services import ResumeReviewService
 from app.tools import DocumentParsingError
 
@@ -18,7 +19,7 @@ router = APIRouter(tags=["resume-review"])
 
 @router.post("/resume-review", summary="Run a resume review agent")
 async def run_resume_review(
-    ctx: CurrentUserDep,
+    user: UserModel | None = Depends(get_current_user_or_none),
     service: ResumeReviewService = Depends(get_resume_review_service),
     resume: UploadFile = File(...),
     review_type: str = Form(default="full"),
@@ -73,7 +74,7 @@ async def run_resume_review(
             industry=industry,
             job_description=job_description,
             model_override=model_override,
-            user_id=ctx.user_id,
+            user_id=user.id if user else None,
         )
     except DocumentParsingError as exc:
         raise HTTPException(status_code=400, detail=exc.message) from exc

@@ -6,7 +6,8 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.api.deps import CurrentUserDep, get_resume_chat_service
+from app.api.deps import get_current_user_or_none, get_resume_chat_service
+from app.database.schema import UserModel
 from app.models.resume_workspace import (
     ApplyDecision,
     ChatContext,
@@ -26,25 +27,16 @@ router = APIRouter(tags=["resume-chat"])
 
 @router.post("/resume-chat", summary="Start a resume review chat session")
 async def start_chat(
-    ctx: CurrentUserDep,
-    payload: ResumeChatCreate,
+    user: UserModel | None = Depends(get_current_user_or_none),
+    payload: ResumeChatCreate = ResumeChatCreate(resume_text=""),
     service: ResumeChatService = Depends(get_resume_chat_service),
 ) -> dict:
-    """Create a new chat session for iterative resume review.
-
-    Args:
-        ctx: Bundled session and authenticated user.
-        payload: Resume text + optional resume context.
-        service: The injected resume chat service.
-
-    Returns:
-        A dict with the chat id and the initial history.
-    """
+    """Create a new chat session for iterative resume review."""
     context = ChatContext(
         resume_text=payload.resume_text,
     )
     return await service.start_chat(
-        user_id=ctx.user_id,
+        user_id=user.id if user else None,
         context=context,
         screening_id=payload.resume_id,
     )
@@ -54,27 +46,14 @@ async def start_chat(
 async def send_chat_message(
     chat_id: str,
     payload: ResumeChatRequest,
-    ctx: CurrentUserDep,
+    user: UserModel | None = Depends(get_current_user_or_none),
     service: ResumeChatService = Depends(get_resume_chat_service),
 ) -> dict:
-    """Send a message and get the assistant reply with proposed edits.
-
-    Args:
-        chat_id: The chat session id.
-        payload: The user's message.
-        ctx: Bundled session and authenticated user.
-        service: The injected resume chat service.
-
-    Returns:
-        A dict with the assistant reply, proposed edits, and history.
-
-    Raises:
-        HTTPException: 404 if the chat session is not found.
-    """
+    """Send a message and get the assistant reply with proposed edits."""
     try:
         return await service.send_message(
             chat_id=chat_id,
-            user_id=ctx.user_id,
+            user_id=user.id if user else None,
             content=payload.content,
         )
     except KeyError as exc:
@@ -84,24 +63,12 @@ async def send_chat_message(
 @router.get("/resume-chat/{chat_id}", summary="Get chat history")
 async def get_chat_history(
     chat_id: str,
-    ctx: CurrentUserDep,
+    user: UserModel | None = Depends(get_current_user_or_none),
     service: ResumeChatService = Depends(get_resume_chat_service),
 ) -> dict:
-    """Return the message history of a chat session.
-
-    Args:
-        chat_id: The chat session id.
-        ctx: Bundled session and authenticated user.
-        service: The injected resume chat service.
-
-    Returns:
-        A dict with the chat id and history.
-
-    Raises:
-        HTTPException: 404 if the chat session is not found.
-    """
+    """Return the message history of a chat session."""
     try:
-        history = await service.get_history(chat_id=chat_id, user_id=ctx.user_id)
+        history = await service.get_history(chat_id=chat_id, user_id=user.id if user else None)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     return {"chat_id": chat_id, "history": history}
@@ -115,28 +82,14 @@ async def get_chat_history(
 async def apply_chat_edit(
     chat_id: str,
     payload: ResumeEditApplyRequest,
-    ctx: CurrentUserDep,
+    user: UserModel | None = Depends(get_current_user_or_none),
     service: ResumeChatService = Depends(get_resume_chat_service),
 ) -> ResumeEditApplyResponse:
-    """Apply a proposed edit to the linked editing session.
-
-    Args:
-        chat_id: The chat session id.
-        payload: The edit (with the target editing session id).
-        ctx: Bundled session and authenticated user.
-        service: The injected resume chat service.
-
-    Returns:
-        The updated document state.
-
-    Raises:
-        HTTPException: 404 if the session is not found; 409 if the edit
-            cannot be resolved against the current document state.
-    """
+    """Apply a proposed edit to the linked editing session."""
     try:
         return await service.apply_edit(
             chat_id=chat_id,
-            user_id=ctx.user_id,
+            user_id=user.id if user else None,
             edit_session_id=payload.document_id,
             edit=payload.action,
         )
@@ -149,26 +102,12 @@ async def apply_chat_edit(
 @router.post("/resume-chat/{chat_id}/readiness", summary="Assess application readiness")
 async def check_readiness(
     chat_id: str,
-    ctx: CurrentUserDep,
+    user: UserModel | None = Depends(get_current_user_or_none),
     service: ResumeChatService = Depends(get_resume_chat_service),
     edit_session_id: str | None = None,
     job_description: str = "",
 ) -> ApplyDecision:
-    """Ask the readiness agent whether the edited resume is ready to apply.
-
-    Args:
-        chat_id: The chat session id.
-        ctx: Bundled session and authenticated user.
-        edit_session_id: The editing session holding the final resume.
-        job_description: Optional target job description.
-        service: The injected resume chat service.
-
-    Returns:
-        An :class:`ApplyDecision`.
-
-    Raises:
-        HTTPException: 404 if the edit session is not found.
-    """
+    """Ask the readiness agent whether the edited resume is ready to apply."""
     if not edit_session_id:
         raise HTTPException(status_code=422, detail="edit_session_id is required")
     try:
@@ -188,28 +127,15 @@ async def check_readiness(
 async def submit_application(
     chat_id: str,
     payload: JobApplicationPayload,
-    ctx: CurrentUserDep,
+    user: UserModel | None = Depends(get_current_user_or_none),
     service: ResumeChatService = Depends(get_resume_chat_service),
 ) -> JobApplicationResult:
-    """Persist a final job application after chat review.
-
-    Args:
-        chat_id: The chat session id.
-        payload: Application details (final resume, cover letter, refs).
-        ctx: Bundled session and authenticated user.
-        service: The injected resume chat service.
-
-    Returns:
-        A :class:`JobApplicationResult`.
-
-    Raises:
-        HTTPException: 404 if the edit session is not found.
-    """
+    """Persist a final job application after chat review."""
     if not payload.edit_session_id:
         raise HTTPException(status_code=422, detail="edit_session_id is required")
     try:
         return await service.submit_application(
-            user_id=ctx.user_id,
+            user_id=user.id if user else None,
             edit_session_id=payload.edit_session_id,
             payload=payload,
         )

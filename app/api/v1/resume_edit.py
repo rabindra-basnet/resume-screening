@@ -6,8 +6,9 @@ import logging
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
-from app.api.deps import CurrentUserDep, get_resume_edit_service
+from app.api.deps import get_current_user_or_none, get_resume_edit_service
 from app.config.constants import ALLOWED_EXTENSIONS, MAX_UPLOAD_BYTES
+from app.database.schema import UserModel
 from app.models.resume_workspace import (
     ResumeEditApplyRequest,
     ResumeEditApplyResponse,
@@ -23,14 +24,14 @@ router = APIRouter(tags=["resume-edit"])
 
 @router.post("/resume-edit/session", summary="Create a resume editing session")
 async def create_edit_session(
-    ctx: CurrentUserDep,
+    user: UserModel | None = Depends(get_current_user_or_none),
     service: ResumeEditService = Depends(get_resume_edit_service),
     resume: UploadFile = File(...),
 ) -> dict:
     """Upload a resume and create an editable session seeded with its text.
 
     Args:
-        ctx: Bundled session and authenticated user.
+        user: Optional authenticated user.
         resume: The resume file (PDF or DOCX).
         service: The injected resume editing service.
 
@@ -60,7 +61,7 @@ async def create_edit_session(
 
     session_id = await service.create_session(
         resume_text=resume_text,
-        user_id=ctx.user_id,
+        user_id=user.id if user else None,
         resume_filename=filename,
     )
     return {"session_id": session_id, "content": resume_text}
@@ -69,20 +70,11 @@ async def create_edit_session(
 @router.get("/resume-edit/session/{session_id}", summary="Get editing session content")
 async def get_edit_session(
     session_id: str,
-    ctx: CurrentUserDep,
+    user: UserModel | None = Depends(get_current_user_or_none),
     service: ResumeEditService = Depends(get_resume_edit_service),
 ) -> dict:
-    """Return the current content of an editing session.
-
-    Args:
-        session_id: The editing session id.
-        ctx: Bundled session and authenticated user.
-        service: The injected resume editing service.
-
-    Returns:
-        A dict with the editing session id and content.
-    """
-    content = await service.get_content(session_id, user_id=ctx.user_id)
+    """Return the current content of an editing session."""
+    content = await service.get_content(session_id, user_id=user.id if user else None)
     if content is None:
         raise HTTPException(status_code=404, detail="Editing session not found")
     return {"session_id": session_id, "content": content}
@@ -96,27 +88,13 @@ async def get_edit_session(
 async def apply_edit(
     session_id: str,
     payload: ResumeEditApplyRequest,
-    ctx: CurrentUserDep,
+    user: UserModel | None = Depends(get_current_user_or_none),
     service: ResumeEditService = Depends(get_resume_edit_service),
 ) -> ResumeEditApplyResponse:
-    """Apply a single line-based edit to the editing session.
-
-    Args:
-        session_id: The editing session id.
-        payload: The edit action to apply.
-        ctx: Bundled session and authenticated user.
-        service: The injected resume editing service.
-
-    Returns:
-        The updated document state.
-
-    Raises:
-        HTTPException: 404 if the session is not found; 409 if the edit
-            cannot be resolved against the current document state.
-    """
+    """Apply a single line-based edit to the editing session."""
     try:
         return await service.apply_edit(
-            session_id, payload.action, user_id=ctx.user_id
+            session_id, payload.action, user_id=user.id if user else None
         )
     except EditConflictError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from None
@@ -131,24 +109,12 @@ async def apply_edit(
 )
 async def undo_edit(
     session_id: str,
-    ctx: CurrentUserDep,
+    user: UserModel | None = Depends(get_current_user_or_none),
     service: ResumeEditService = Depends(get_resume_edit_service),
 ) -> ResumeEditUndoResponse:
-    """Undo the most recent edit.
-
-    Args:
-        session_id: The editing session id.
-        ctx: Bundled session and authenticated user.
-        service: The injected resume editing service.
-
-    Returns:
-        The reverted document state.
-
-    Raises:
-        HTTPException: 404 if the session is not found or nothing to undo.
-    """
+    """Undo the most recent edit."""
     try:
-        return await service.undo(session_id, user_id=ctx.user_id)
+        return await service.undo(session_id, user_id=user.id if user else None)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from None
 
@@ -160,23 +126,11 @@ async def undo_edit(
 )
 async def redo_edit(
     session_id: str,
-    ctx: CurrentUserDep,
+    user: UserModel | None = Depends(get_current_user_or_none),
     service: ResumeEditService = Depends(get_resume_edit_service),
 ) -> ResumeEditUndoResponse:
-    """Redo the most recently undone edit.
-
-    Args:
-        session_id: The editing session id.
-        ctx: Bundled session and authenticated user.
-        service: The injected resume editing service.
-
-    Returns:
-        The re-applied document state.
-
-    Raises:
-        HTTPException: 404 if the session is not found or nothing to redo.
-    """
+    """Redo the most recently undone edit."""
     try:
-        return await service.redo(session_id, user_id=ctx.user_id)
+        return await service.redo(session_id, user_id=user.id if user else None)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from None
