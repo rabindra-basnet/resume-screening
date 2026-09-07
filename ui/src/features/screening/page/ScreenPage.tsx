@@ -76,7 +76,7 @@ export default function ScreenPage() {
 
         {/* Tab 3: Learning Roadmap Workspace */}
         <TabsContent value="learning" className="space-y-6 focus-visible:outline-none">
-          <LearningPage embedded />
+          <LearningPage />
         </TabsContent>
       </Tabs>
     </div>

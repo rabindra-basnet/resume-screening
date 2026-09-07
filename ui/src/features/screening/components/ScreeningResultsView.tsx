@@ -13,12 +13,10 @@ import {
   Phone,
   Briefcase,
   GraduationCap,
-  ArrowRight,
   ExternalLink,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/shared/components/ui/card";
 import { Badge } from "@/shared/components/ui/badge";
-import { Link } from "@tanstack/react-router";
 
 const statusConfig: Record<
   string,
@@ -251,12 +249,6 @@ export function ScreeningResultsView({ result }: { result: ScreeningResult }) {
                   </Card>
                 </a>
               ))}
-            </div>
-
-            <div className="mt-5 text-right">
-              <Link to="/learning" className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
-                View all resources in Learning Center <ArrowRight size={12} />
-              </Link>
             </div>
           </CardContent>
         </Card>

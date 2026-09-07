@@ -13,8 +13,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as WorkspaceRouteRouteImport } from './routes/_workspace/route'
 import { Route as LoginRouteRouteImport } from './routes/login/route'
 import { Route as WorkspaceAccountRouteImport } from './routes/_workspace/account'
-import { Route as WorkspaceJobsRouteImport } from './routes/_workspace/jobs'
-import { Route as WorkspaceLearningRouteImport } from './routes/_workspace/learning'
 import { Route as WorkspaceScreenRouteImport } from './routes/_workspace/screen'
 
 const IndexRoute = IndexRouteImport.update({
@@ -38,20 +36,6 @@ const WorkspaceAccountRoute = WorkspaceAccountRouteImport.update({
 } as any).lazy(() =>
   import('./routes/_workspace/account.lazy').then((d) => d.Route),
 )
-const WorkspaceJobsRoute = WorkspaceJobsRouteImport.update({
-  id: '/jobs',
-  path: '/jobs',
-  getParentRoute: () => WorkspaceRouteRoute,
-} as any).lazy(() =>
-  import('./routes/_workspace/jobs.lazy').then((d) => d.Route),
-)
-const WorkspaceLearningRoute = WorkspaceLearningRouteImport.update({
-  id: '/learning',
-  path: '/learning',
-  getParentRoute: () => WorkspaceRouteRoute,
-} as any).lazy(() =>
-  import('./routes/_workspace/learning.lazy').then((d) => d.Route),
-)
 const WorkspaceScreenRoute = WorkspaceScreenRouteImport.update({
   id: '/screen',
   path: '/screen',
@@ -64,16 +48,12 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRouteRoute
   '/account': typeof WorkspaceAccountRoute
-  '/jobs': typeof WorkspaceJobsRoute
-  '/learning': typeof WorkspaceLearningRoute
   '/screen': typeof WorkspaceScreenRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRouteRoute
   '/account': typeof WorkspaceAccountRoute
-  '/jobs': typeof WorkspaceJobsRoute
-  '/learning': typeof WorkspaceLearningRoute
   '/screen': typeof WorkspaceScreenRoute
 }
 export interface FileRoutesById {
@@ -82,23 +62,19 @@ export interface FileRoutesById {
   '/_workspace': typeof WorkspaceRouteRouteWithChildren
   '/login': typeof LoginRouteRoute
   '/_workspace/account': typeof WorkspaceAccountRoute
-  '/_workspace/jobs': typeof WorkspaceJobsRoute
-  '/_workspace/learning': typeof WorkspaceLearningRoute
   '/_workspace/screen': typeof WorkspaceScreenRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/account' | '/jobs' | '/learning' | '/screen'
+  fullPaths: '/' | '/login' | '/account' | '/screen'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/account' | '/jobs' | '/learning' | '/screen'
+  to: '/' | '/login' | '/account' | '/screen'
   id:
     | '__root__'
     | '/'
     | '/_workspace'
     | '/login'
     | '/_workspace/account'
-    | '/_workspace/jobs'
-    | '/_workspace/learning'
     | '/_workspace/screen'
   fileRoutesById: FileRoutesById
 }
@@ -138,20 +114,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceAccountRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
-    '/_workspace/jobs': {
-      id: '/_workspace/jobs'
-      path: '/jobs'
-      fullPath: '/jobs'
-      preLoaderRoute: typeof WorkspaceJobsRouteImport
-      parentRoute: typeof WorkspaceRouteRoute
-    }
-    '/_workspace/learning': {
-      id: '/_workspace/learning'
-      path: '/learning'
-      fullPath: '/learning'
-      preLoaderRoute: typeof WorkspaceLearningRouteImport
-      parentRoute: typeof WorkspaceRouteRoute
-    }
     '/_workspace/screen': {
       id: '/_workspace/screen'
       path: '/screen'
@@ -164,15 +126,11 @@ declare module '@tanstack/react-router' {
 
 interface WorkspaceRouteRouteChildren {
   WorkspaceAccountRoute: typeof WorkspaceAccountRoute
-  WorkspaceJobsRoute: typeof WorkspaceJobsRoute
-  WorkspaceLearningRoute: typeof WorkspaceLearningRoute
   WorkspaceScreenRoute: typeof WorkspaceScreenRoute
 }
 
 const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
   WorkspaceAccountRoute: WorkspaceAccountRoute,
-  WorkspaceJobsRoute: WorkspaceJobsRoute,
-  WorkspaceLearningRoute: WorkspaceLearningRoute,
   WorkspaceScreenRoute: WorkspaceScreenRoute,
 }
 

@@ -1,7 +1,11 @@
 import { Link, Outlet } from "@tanstack/react-router";
 import { FileText, Sparkles, LogIn, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Avatar, AvatarImage, AvatarFallback } from "@/shared/components/ui/avatar";
+import {
+  Avatar,
+  AvatarImage,
+  AvatarFallback,
+} from "@/shared/components/ui/avatar";
 import { Button } from "@/shared/components/ui/button";
 
 export default function Layout() {
@@ -30,7 +34,11 @@ export default function Layout() {
           {/* Workspace Action */}
           <div className="flex items-center gap-3">
             <Link to="/screen">
-              <Button size="sm" variant="default" className="gap-2 rounded-xl font-semibold shadow-xs">
+              <Button
+                size="sm"
+                variant="default"
+                className="gap-2 rounded-xl font-semibold shadow-xs"
+              >
                 <Sparkles size={15} />
                 Agentic Workspace
               </Button>
@@ -53,7 +61,9 @@ export default function Layout() {
                       {user.name?.charAt(0)?.toUpperCase() || "U"}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="font-semibold text-xs hidden sm:inline">{user.name}</span>
+                  <span className="font-semibold text-xs hidden sm:inline">
+                    {user.name}
+                  </span>
                 </Link>
 
                 <button
@@ -68,7 +78,11 @@ export default function Layout() {
               </div>
             ) : (
               <Link to="/login">
-                <Button size="sm" variant="outline" className="gap-2 rounded-xl font-semibold">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-2 rounded-xl font-semibold"
+                >
                   <LogIn size={15} />
                   Sign In
                 </Button>

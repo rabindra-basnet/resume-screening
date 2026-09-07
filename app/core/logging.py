@@ -28,6 +28,14 @@ _LOG_FORMAT = (
 
 _installed_files: set[str] = set()
 
+# Defaults baked into the config — these are the defaults unless explicitly
+# overridden at the call site (no env vars required).
+DEFAULT_LOG_LEVEL = logging.INFO
+DEFAULT_LOG_FILE: str | None = None
+DEFAULT_LOG_FILE_MAX_BYTES = 10 * 1024 * 1024
+DEFAULT_LOG_FILE_BACKUP_COUNT = 3
+DEFAULT_VERBOSE = False
+
 
 class RequestIdFilter(logging.Filter):
     """Attach the current request id to every log record."""
@@ -73,12 +81,12 @@ def _add_file_handler(path: str, *, max_bytes: int, backup_count: int) -> None:
 
 
 def configure_logging(
-    level: int | str = logging.INFO,
+    level: int | str = DEFAULT_LOG_LEVEL,
     *,
-    file_path: str | None = None,
-    max_bytes: int = 10 * 1024 * 1024,
-    backup_count: int = 3,
-    verbose: bool = False,
+    file_path: str | None = DEFAULT_LOG_FILE,
+    max_bytes: int = DEFAULT_LOG_FILE_MAX_BYTES,
+    backup_count: int = DEFAULT_LOG_FILE_BACKUP_COUNT,
+    verbose: bool = DEFAULT_VERBOSE,
 ) -> None:
     """Configure root logging for the application.
 

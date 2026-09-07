@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 class RequestContextMiddleware(BaseHTTPMiddleware):
     """Attach a per-request id and populate the logging context variable."""
 
-    def __init__(self, app, *, log_requests: bool = False):  # type: ignore[no-untyped-def]
+    def __init__(self, app, *, log_requests: bool = True):  # type: ignore[no-untyped-def]
         """Create the middleware.
 
         Args:
