@@ -327,10 +327,10 @@ export function CvBuilder() {
         </div>
       </div>
 
-      {/* 2-Column Workspace Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column (Inputs / Actions) */}
-        <div className="lg:col-span-5 space-y-6">
+      {/* Stacked Workspace Layout: Form Inputs Top, Agent Results Below */}
+      <div className="space-y-8">
+        {/* Top Section: Inputs & Actions */}
+        <div className="w-full">
           {step === "review" && (
             <Card className="border-border/60 bg-card/80 backdrop-blur shadow-sm">
               <CardHeader>
@@ -344,41 +344,45 @@ export function CvBuilder() {
               </CardHeader>
               <CardContent>
                 <form onSubmit={runReview} className="space-y-5">
-                  <ResumeDropzone
-                    selectedFile={selectedFile}
-                    dragging={dragging}
-                    setDragging={setDragging}
-                    onSelectFile={setSelectedFile}
-                  />
-
-                  <div>
-                    <Label className="mb-2 block text-sm font-semibold">
-                      Target Industry <span className="font-normal text-muted-foreground">(optional)</span>
-                    </Label>
-                    <Input
-                      value={industry}
-                      onChange={(e) => setIndustry(e.target.value)}
-                      placeholder="e.g. fintech, healthtech, AI/SaaS"
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <ResumeDropzone
+                      selectedFile={selectedFile}
+                      dragging={dragging}
+                      setDragging={setDragging}
+                      onSelectFile={setSelectedFile}
                     />
-                  </div>
 
-                  <div>
-                    <Label className="mb-2 block text-sm font-semibold">Job Description Text (for ATS & Fit)</Label>
-                    <Textarea
-                      value={jobDescription}
-                      onChange={(e) => setJobDescription(e.target.value)}
-                      placeholder="Paste the target job description here — consumed by the agent pipeline for keyword and fit scoring..."
-                      className="min-h-[140px]"
-                    />
+                    <div className="space-y-4">
+                      <div>
+                        <Label className="mb-2 block text-sm font-semibold">
+                          Target Industry <span className="font-normal text-muted-foreground">(optional)</span>
+                        </Label>
+                        <Input
+                          value={industry}
+                          onChange={(e) => setIndustry(e.target.value)}
+                          placeholder="e.g. fintech, healthtech, AI/SaaS"
+                        />
+                      </div>
+
+                      <div>
+                        <Label className="mb-2 block text-sm font-semibold">Job Description Text (for ATS & Fit)</Label>
+                        <Textarea
+                          value={jobDescription}
+                          onChange={(e) => setJobDescription(e.target.value)}
+                          placeholder="Paste the target job description here — consumed by the agent pipeline for keyword and fit scoring..."
+                          className="min-h-[120px]"
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   <Separator />
 
-                  <div className="space-y-3">
-                    <p className="text-xs text-muted-foreground leading-relaxed">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <p className="text-xs text-muted-foreground leading-relaxed max-w-xl">
                       Clicking Run Review initiates the <strong>Agent Orchestrator</strong>, triggering multi-agent structural, ATS, bullet, tone, and quality evaluations.
                     </p>
-                    <Button type="submit" disabled={busyReview || !selectedFile} size="lg" className="w-full gap-2 font-semibold">
+                    <Button type="submit" disabled={busyReview || !selectedFile} size="lg" className="w-full sm:w-auto gap-2 font-semibold px-8">
                       {busyReview ? (
                         <>
                           <RefreshCw className="animate-spin" size={18} />
@@ -495,8 +499,8 @@ export function CvBuilder() {
           )}
         </div>
 
-        {/* Right Column (Agent Output & Results) */}
-        <div className="lg:col-span-7 space-y-6">
+        {/* Bottom Section: Agent Results & Feedback (Positioned below the form) */}
+        <div className="w-full space-y-6">
           {busyReview && (
             <Card className="border-primary/30 bg-primary/5 animate-pulse">
               <CardContent className="p-12 text-center space-y-4">
@@ -538,20 +542,20 @@ export function CvBuilder() {
 
           {step === "review" && !reviewReady && !busyReview && (
             <Card className="border-dashed border-border/80 bg-card/40">
-              <CardContent className="py-20 text-center space-y-3">
+              <CardContent className="py-16 text-center space-y-3">
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
                   <Sparkles size={24} />
                 </div>
                 <h3 className="text-base font-semibold">Agent Feedback Pipeline Ready</h3>
                 <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                  Upload a PDF/DOCX resume on the left panel to execute the multi-agent screening evaluation.
+                  Upload a PDF/DOCX resume above to execute the multi-agent screening evaluation. Results will appear right here.
                 </p>
               </CardContent>
             </Card>
           )}
 
           {step === "chat" && (
-            <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card className="border-border/60 bg-card/80 backdrop-blur shadow-sm">
                 <CardHeader className="flex-row items-center justify-between space-y-0">
                   <div>
@@ -609,7 +613,7 @@ export function CvBuilder() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <pre className="max-h-72 overflow-y-auto whitespace-pre-wrap rounded-xl border border-border/40 bg-muted/40 p-4 font-mono text-xs leading-relaxed">
+                    <pre className="max-h-[420px] overflow-y-auto whitespace-pre-wrap rounded-xl border border-border/40 bg-muted/40 p-4 font-mono text-xs leading-relaxed">
                       {resumeText}
                     </pre>
                   </CardContent>
