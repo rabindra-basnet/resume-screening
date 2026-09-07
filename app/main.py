@@ -43,7 +43,14 @@ UI_DIST = BASE_DIR / "ui" / "dist"
 
 logger = logging.getLogger(__name__)
 
-configure_logging(get_settings().log_level)
+settings = get_settings()
+configure_logging(
+    level=settings.log_level,
+    file_path=settings.log_file or None,
+    max_bytes=settings.log_file_max_bytes,
+    backup_count=settings.log_file_backup_count,
+    verbose=settings.app_env in ("development", "staging"),
+)
 
 
 @asynccontextmanager
@@ -83,7 +90,10 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
-    app.add_middleware(RequestContextMiddleware)
+    app.add_middleware(
+        RequestContextMiddleware,
+        log_requests=settings.log_requests,
+    )
 
     # Restrict allowed origins for security when credentials are sent
     allowed_origins = [

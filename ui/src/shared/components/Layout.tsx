@@ -86,7 +86,7 @@ export default function Layout() {
       {/* Clean Minimal Footer */}
       <footer className="border-t border-border/40 py-6 bg-card/20 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 text-xs text-muted-foreground">
-          <span>© {new Date().getFullYear()} TalentPulse AI</span>
+          <span>© TalentPulse AI</span>
         </div>
       </footer>
     </div>

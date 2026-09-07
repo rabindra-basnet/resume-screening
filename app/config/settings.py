@@ -61,6 +61,12 @@ class Settings(BaseSettings):
     # ── Observability / logging ─────────────────────────────────────────
     # Root log level for the application logger tree.
     log_level: str = "INFO"
+    # Log requests (method, path, status, duration) at INFO to the console/file.
+    log_requests: bool = True
+    # Optional local rotating log file (e.g. "logs/dev.log"). Empty = stdout only.
+    log_file: str = ""
+    log_file_max_bytes: int = 10 * 1024 * 1024
+    log_file_backup_count: int = 3
     # Sentry DSN for error tracking / performance monitoring. Leave empty to
     # keep local streamed logging only (no network calls). Free Developer tier
     # covers 5k errors/mo; see https://sentry.io/pricing.

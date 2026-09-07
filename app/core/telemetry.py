@@ -50,7 +50,6 @@ def configure_sentry(
 
     try:
         import sentry_sdk
-        from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
         from sentry_sdk.integrations.fastapi import FastApiIntegration
 
         sentry_sdk.init(
@@ -60,7 +59,6 @@ def configure_sentry(
             send_default_pii=send_default_pii,
             integrations=[
                 FastApiIntegration(),
-                SentryAsgiMiddleware(),
             ],
         )
         _sentry_initialized = True
