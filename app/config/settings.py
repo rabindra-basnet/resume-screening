@@ -23,7 +23,9 @@ class LLMProviderConfig(BaseModel):
     """
 
     llm_provider: str = "openai"
-    llm_model: str = "gpt-4o-mini"
+    # 'big-pickle' is a verified working free model on the OpenCode Zen gateway
+    # (returns content directly). Override via LLM_MODEL when moving providers.
+    llm_model: str = "big-pickle"
     # Placeholder key so the OpenAI-compatible client always sees an api_key.
     # Swap it via LLM_API_KEY when moving to a paid provider; the dummy value
     # only matters to satisfy client construction for keyless/self-hosted
@@ -64,7 +66,8 @@ class Settings(BaseSettings):
 
     # ── LLM provider ──────────────────────────────────────────────────
     llm_provider: str = "openai"
-    llm_model: str = "gpt-4o-mini"
+    # 'big-pickle' is a verified working free model on the OpenCode Zen gateway.
+    llm_model: str = "big-pickle"
     # Placeholder key (see LLMProviderConfig): keeps the OpenAI-compatible
     # client constructible while ''LLM_API_KEY'' is unset; replace on Vercel
     # when moving to a paid provider.
