@@ -381,7 +381,7 @@ export function CvBuilder() {
 
   // ── render ────────────────────────────────────────────────────────────────
   return (
-    <div className="space-y-4">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden space-y-2">
       {error && (
         <div className="flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-3.5 py-2.5 text-sm text-destructive" data-testid="workspace-error">
           <span className="flex-1">{error}</span>
@@ -393,10 +393,10 @@ export function CvBuilder() {
 
       {/* ROOT: Page 1 — Hero Landing State (Matching Screenshot 1 pixel-for-pixel) */}
       {!hasSession ? (
-        <div className="mx-auto flex min-h-[82vh] w-full max-w-3xl flex-col items-center justify-center px-4 py-6" data-testid="workspace-root">
+        <div className="mx-auto flex h-full w-full max-w-3xl flex-col items-center justify-center overflow-hidden px-4 py-4" data-testid="workspace-root">
           {/* Glowing 3D Sphere Orb Header */}
-          <div className="relative mb-5 flex items-center justify-center">
-            <div className="h-16 w-16 rounded-full bg-gradient-to-tr from-cyan-400 via-blue-500 to-indigo-600 shadow-[0_0_35px_rgba(59,130,246,0.45)] transition-transform hover:scale-105" />
+          <div className="relative mb-4 flex items-center justify-center">
+            <div className="h-14 w-14 rounded-full bg-gradient-to-tr from-cyan-400 via-blue-500 to-indigo-600 shadow-[0_0_35px_rgba(59,130,246,0.45)] transition-transform hover:scale-105" />
           </div>
 
           {/* Heading matching Screenshot 1 */}
@@ -405,8 +405,8 @@ export function CvBuilder() {
           </h1>
 
           {/* Main Central Input Box Card matching Screenshot 1 */}
-          <div className="mt-7 w-full rounded-2xl border border-slate-200/90 bg-white p-4 shadow-[0_4px_24px_rgba(0,0,0,0.04)] dark:border-slate-800 dark:bg-card" data-testid="quickstart-card">
-            <div className="space-y-3">
+          <div className="mt-5 w-full rounded-2xl border border-slate-200/90 bg-white p-4 shadow-[0_4px_24px_rgba(0,0,0,0.04)] dark:border-slate-800 dark:bg-card" data-testid="quickstart-card">
+            <div className="space-y-2.5">
               <div className="flex items-center justify-between px-1">
                 <span className="text-xs font-semibold text-slate-400">Ask anything</span>
                 <label className="inline-flex cursor-pointer items-center gap-1 text-xs font-medium text-blue-600 hover:underline">
@@ -447,7 +447,7 @@ export function CvBuilder() {
                 />
               )}
 
-              <div className="rounded-xl bg-slate-50/80 p-2.5 dark:bg-slate-900/50">
+              <div className="rounded-xl bg-slate-50/80 p-2 dark:bg-slate-900/50">
                 <Textarea
                   id="qs-jd"
                   value={setup.jobDescription}
@@ -515,11 +515,11 @@ export function CvBuilder() {
           </div>
 
           {/* Suggestion Chips Row Below Card matching Screenshot 1 */}
-          <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5">
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
             <button
               type="button"
               onClick={() => void runPipeline({ promptFocus: "Full 5-Agent Resume Optimization" })}
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-700 shadow-2xs transition-all hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-card dark:text-slate-300"
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-medium text-slate-700 shadow-2xs transition-all hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-card dark:text-slate-300"
             >
               <Sparkles size={13} className="text-blue-500" />
               <span>Optimize Resume</span>
@@ -527,7 +527,7 @@ export function CvBuilder() {
             <button
               type="button"
               onClick={() => void runPipeline({ promptFocus: "Analyze ATS Keyword Gaps & Match Score" })}
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-700 shadow-2xs transition-all hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-card dark:text-slate-300"
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-medium text-slate-700 shadow-2xs transition-all hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-card dark:text-slate-300"
             >
               <Target size={13} className="text-emerald-500" />
               <span>Analyze ATS Gaps</span>
@@ -535,7 +535,7 @@ export function CvBuilder() {
             <button
               type="button"
               onClick={() => void runPipeline({ promptFocus: "Transform Achievements to Action-Task-Result Bullets" })}
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-700 shadow-2xs transition-all hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-card dark:text-slate-300"
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-medium text-slate-700 shadow-2xs transition-all hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-card dark:text-slate-300"
             >
               <Wand2 size={13} className="text-purple-500" />
               <span>Bullet Transformer</span>
@@ -543,20 +543,20 @@ export function CvBuilder() {
             <button
               type="button"
               onClick={() => void runPipeline({ promptFocus: "Align Senior Industry Tone & Executive Summary" })}
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-700 shadow-2xs transition-all hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-card dark:text-slate-300"
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-medium text-slate-700 shadow-2xs transition-all hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-card dark:text-slate-300"
             >
               <PenTool size={13} className="text-orange-500" />
               <span>Senior Tone Match</span>
             </button>
           </div>
 
-          <p className="mt-8 text-center text-[11px] text-slate-400">
+          <p className="mt-5 text-center text-[11px] text-slate-400">
             By messaging AI, you agree to our <span className="underline">Terms</span> and have read our <span className="underline">Privacy Policy</span>
           </p>
 
           <button
             type="button"
-            className="mt-3 text-center text-xs font-medium text-slate-500 hover:text-blue-600"
+            className="mt-2 text-center text-xs font-medium text-slate-500 hover:text-blue-600"
             onClick={handleDemo}
             disabled={busyReview}
             data-testid="run-demo"
@@ -565,12 +565,12 @@ export function CvBuilder() {
           </button>
 
           {busyReview && statusText && (
-            <p className="mt-4 text-center text-xs font-medium text-blue-600 animate-pulse">{statusText}</p>
+            <p className="mt-3 text-center text-xs font-medium text-blue-600 animate-pulse">{statusText}</p>
           )}
         </div>
       ) : (
         /* Page 2 — Split-Screen Workspace (Matching Screenshot 2 Lovable style) */
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[230px_minmax(0,1fr)_400px]">
+        <div className="grid h-full min-h-0 flex-1 grid-cols-1 gap-3 overflow-hidden xl:grid-cols-[230px_minmax(0,1fr)_400px]">
           <div className="hidden min-h-0 xl:block">
             <ConversationsSidebar
               conversations={conversations}
