@@ -25,7 +25,6 @@ import {
   useConversations,
   type Conversation,
 } from "../hooks/useConversations";
-import { ConversationsSidebar } from "./ConversationsSidebar";
 import { ChatMessages } from "./ChatMessages";
 import { ChatComposer } from "./ChatComposer";
 import { WorkspacePanel, type SetupState } from "./WorkspacePanel";
@@ -57,13 +56,10 @@ Requirements:
 
 export function CvBuilder() {
   const {
-    conversations,
-    activeId,
     active,
     setActiveId,
     createConversation,
     patchConversation,
-    deleteConversation,
     makeTitle,
   } = useConversations();
 
@@ -569,23 +565,10 @@ export function CvBuilder() {
           )}
         </div>
       ) : (
-        /* Page 2 — Split-Screen Workspace (Matching Screenshot 2 Lovable style) */
-        <div className="grid h-full min-h-0 flex-1 grid-cols-1 gap-3 overflow-hidden xl:grid-cols-[230px_minmax(0,1fr)_400px]">
-          <div className="hidden min-h-0 xl:block">
-            <ConversationsSidebar
-              conversations={conversations}
-              activeId={activeId}
-              onSelect={setActiveId}
-              onNew={() => {
-                createConversation();
-                setPanelTab("setup");
-              }}
-              onDelete={deleteConversation}
-            />
-          </div>
-
-          {/* Chat column */}
-          <div className="flex min-h-[72vh] flex-col rounded-2xl border border-border/60 bg-card/70 backdrop-blur" data-testid="chat-column">
+        /* Page 2 — Split-Screen Workspace (2-Column Clean Layout: Left Chat | Right Document) */
+        <div className="grid h-full min-h-0 flex-1 grid-cols-1 gap-3 overflow-hidden lg:grid-cols-[minmax(0,1fr)_480px]">
+          {/* Chat column (Left) */}
+          <div className="flex h-full min-h-0 flex-col rounded-2xl border border-border/60 bg-card/70 backdrop-blur" data-testid="chat-column">
             <div className="flex items-center justify-between gap-2 border-b border-border/40 px-4 py-3">
               <div className="flex min-w-0 items-center gap-2.5">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -605,15 +588,15 @@ export function CvBuilder() {
                 </div>
               </div>
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
-                className="gap-1.5 xl:hidden"
+                className="gap-1.5 rounded-xl font-medium"
                 onClick={() => {
                   createConversation();
-                  setPanelTab("setup");
+                  setPanelTab("resume");
                 }}
               >
-                <ArrowLeft size={14} /> New
+                <ArrowLeft size={14} /> New Session
               </Button>
             </div>
 
@@ -641,8 +624,8 @@ export function CvBuilder() {
             </div>
           </div>
 
-          {/* Documents column */}
-          <div className="min-h-[72vh] rounded-2xl border border-border/60 bg-card/70 p-3 backdrop-blur" data-testid="documents-column">
+          {/* Documents column (Right) */}
+          <div className="flex h-full min-h-0 flex-col rounded-2xl border border-border/60 bg-card/70 p-3 backdrop-blur" data-testid="documents-column">
             <WorkspacePanel
               tab={panelTab}
               onTabChange={setPanelTab}
