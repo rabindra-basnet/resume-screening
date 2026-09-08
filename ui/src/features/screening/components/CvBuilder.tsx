@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "@tanstack/react-router";
 import type {
   ChatMessage,
   ChatProposedEdit,
@@ -49,13 +50,28 @@ Requirements:
 • Experience with container deployment, cloud systems, and async services.`;
 
 export function CvBuilder() {
+  const navigate = useNavigate();
+  const params = useParams({ strict: false }) as { sessionId?: string };
+  const routeSessionId = params.sessionId;
+
   const {
+    conversations,
     active,
     setActiveId,
     createConversation,
     patchConversation,
     makeTitle,
   } = useConversations();
+
+  // Sync active conversation when URL path param changes or initial load
+  useEffect(() => {
+    if (routeSessionId) {
+      const match = conversations.find((c) => c.id === routeSessionId || c.chatId === routeSessionId);
+      if (match && active?.id !== match.id) {
+        setActiveId(match.id);
+      }
+    }
+  }, [routeSessionId, conversations, active?.id, setActiveId]);
 
   // ── workspace state ───────────────────────────────────────────────────────
   const [setup, setSetup] = useState<SetupState>({
@@ -132,6 +148,9 @@ export function CvBuilder() {
     // Ensure a conversation shell exists and becomes the binding target.
     const conv: Conversation = active && !active.chatId ? active : createConversation();
     if (!active || active.chatId) setActiveId(conv.id);
+
+    // Redirect route URL to include the sessionId path parameter
+    void navigate({ to: "/screen/$sessionId", params: { sessionId: conv.id } });
 
     // Reset per-run results.
     setReviewResults(null);
@@ -554,6 +573,7 @@ export function CvBuilder() {
                 className="gap-1.5 rounded-xl font-medium"
                 onClick={() => {
                   createConversation();
+                  void navigate({ to: "/screen" });
                 }}
               >
                 <ArrowLeft size={14} /> New Session

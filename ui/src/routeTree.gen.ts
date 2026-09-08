@@ -14,6 +14,7 @@ import { Route as WorkspaceRouteRouteImport } from './routes/_workspace/route'
 import { Route as LoginRouteRouteImport } from './routes/login/route'
 import { Route as ScreenRouteImport } from './routes/screen'
 import { Route as WorkspaceAccountRouteImport } from './routes/_workspace/account'
+import { Route as ScreenSessionIdRouteImport } from './routes/screen.$sessionId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -41,32 +42,42 @@ const WorkspaceAccountRoute = WorkspaceAccountRouteImport.update({
 } as any).lazy(() =>
   import('./routes/_workspace/account.lazy').then((d) => d.Route),
 )
+const ScreenSessionIdRoute = ScreenSessionIdRouteImport.update({
+  id: '/$sessionId',
+  path: '/$sessionId',
+  getParentRoute: () => ScreenRoute,
+} as any).lazy(() =>
+  import('./routes/screen.$sessionId.lazy').then((d) => d.Route),
+)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRouteRoute
-  '/screen': typeof ScreenRoute
+  '/screen': typeof ScreenRouteWithChildren
   '/account': typeof WorkspaceAccountRoute
+  '/screen/$sessionId': typeof ScreenSessionIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRouteRoute
-  '/screen': typeof ScreenRoute
+  '/screen': typeof ScreenRouteWithChildren
   '/account': typeof WorkspaceAccountRoute
+  '/screen/$sessionId': typeof ScreenSessionIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_workspace': typeof WorkspaceRouteRouteWithChildren
   '/login': typeof LoginRouteRoute
-  '/screen': typeof ScreenRoute
+  '/screen': typeof ScreenRouteWithChildren
   '/_workspace/account': typeof WorkspaceAccountRoute
+  '/screen/$sessionId': typeof ScreenSessionIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/screen' | '/account'
+  fullPaths: '/' | '/login' | '/screen' | '/account' | '/screen/$sessionId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/screen' | '/account'
+  to: '/' | '/login' | '/screen' | '/account' | '/screen/$sessionId'
   id:
     | '__root__'
     | '/'
@@ -74,13 +85,14 @@ export interface FileRouteTypes {
     | '/login'
     | '/screen'
     | '/_workspace/account'
+    | '/screen/$sessionId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   WorkspaceRouteRoute: typeof WorkspaceRouteRouteWithChildren
   LoginRouteRoute: typeof LoginRouteRoute
-  ScreenRoute: typeof ScreenRoute
+  ScreenRoute: typeof ScreenRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -120,6 +132,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceAccountRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
+    '/screen/$sessionId': {
+      id: '/screen/$sessionId'
+      path: '/$sessionId'
+      fullPath: '/screen/$sessionId'
+      preLoaderRoute: typeof ScreenSessionIdRouteImport
+      parentRoute: typeof ScreenRoute
+    }
   }
 }
 
@@ -135,11 +154,22 @@ const WorkspaceRouteRouteWithChildren = WorkspaceRouteRoute._addFileChildren(
   WorkspaceRouteRouteChildren,
 )
 
+interface ScreenRouteChildren {
+  ScreenSessionIdRoute: typeof ScreenSessionIdRoute
+}
+
+const ScreenRouteChildren: ScreenRouteChildren = {
+  ScreenSessionIdRoute: ScreenSessionIdRoute,
+}
+
+const ScreenRouteWithChildren =
+  ScreenRoute._addFileChildren(ScreenRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   WorkspaceRouteRoute: WorkspaceRouteRouteWithChildren,
   LoginRouteRoute: LoginRouteRoute,
-  ScreenRoute: ScreenRoute,
+  ScreenRoute: ScreenRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
