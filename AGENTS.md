@@ -79,11 +79,11 @@ The `ui/` app uses **Tailwind CSS v4** with the Vite plugin and TanStack Router.
 ## Agent Memory & Tomorrow's Build TODO Checklist
 
 ### Completed In Today's Session
-- [x] **Hero Landing State (`CvBuilder.tsx`)**: Glowing gradient orb header (`What Can I help with?`), central card input with in-card action pills (`Attach`, `Search`, `Reason`, `Voice`), quick prompt chips (`Optimize Resume`, `Analyze ATS Gaps`, `Bullet Transformer`, `Senior Tone Match`), and demo runner.
-- [x] **Conversational Flow Transition**: Seamless single-flow transition from Page 1 (Hero State) into Page 2 (Split-screen session workspace), carrying prompt + CV text/file + target Job Description (JD).
+- [x] **Page 1 Hero Landing State (`CvBuilder.tsx`)**: 3D glowing cyan/blue orb header (`What Can I help with?`), central card input with in-card action pills (`Attach`, `Search`, `Reason`, `Voice`), quick prompt chips (`Optimize Resume`, `Analyze ATS Gaps`, `Bullet Transformer`, `Senior Tone Match`), and privacy terms footer.
+- [x] **Page 2 Split-Screen Workspace (`CvBuilder.tsx`, `WorkspacePanel.tsx`, `ChatMessages.tsx`)**: Lovable-style canvas preview layout featuring top dashboard title banner (`📊 Resume Optimization Dashboard`), 3 KPI cards (Matched Keywords `4,673`, Tone Score `$5,607.48`, and glowing green highlight card **95% ATS Score** `✓ Profitable candidate profile!`), left chat rail with collapsible reasoning badge (`💡 Thought for 7s`), active editing status (`📄 Editing resume.txt`), and purple submit button (`Apply & Submit`).
+- [x] **Conversational Flow Transition**: Unified single-flow transition carrying prompt focus + CV text/file + target Job Description (JD) directly into active session.
 - [x] **Live Generative Stream UI (`ChatMessages.tsx`)**: Real-time 5-agent stage progress ticker (`[1/5]` to `[5/5]`), collapsible reasoning thought blocks (`Thought for 7s`), and live generative stream status badge.
-- [x] **Split-Screen Canvas Dashboard (`WorkspacePanel.tsx`)**: Executive KPI metric cards (**ATS Match Score %**, **Tone Alignment %**, **Quality Score %**) above 5-agent report breakdown & line editor.
-- [x] **Build Verification**: `npm run typecheck && npm run build` verified with 0 errors; production bundle output to `ui/dist`.
+- [x] **Build & Git Verification**: `npm run typecheck && npm run build` verified with 0 errors; committed and pushed to GitHub main (`https://github.com/rabindra-basnet/resume-screening.git`).
 
 ### Tomorrow's Build TODO List
 - [ ] Launch full backend server (`uvicorn app.main:app --reload`) and verify end-to-end API integration with BYOK LLM models.
