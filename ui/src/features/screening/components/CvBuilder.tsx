@@ -478,17 +478,37 @@ export function CvBuilder() {
                   </p>
                 </div>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5 rounded-xl font-medium"
-                onClick={() => {
-                  createConversation();
-                  void navigate({ to: "/screen" });
-                }}
-              >
-                <ArrowLeft size={14} /> New Session
-              </Button>
+              <div className="flex items-center gap-1.5">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+                  title="Reset split layout to 50/50"
+                  onClick={() => setRightWidthPct(50)}
+                >
+                  50/50
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+                  title="Expand chat view"
+                  onClick={() => setRightWidthPct(rightWidthPct === 20 ? 45 : 20)}
+                >
+                  {rightWidthPct === 20 ? "Shrink Chat" : "Expand Chat"}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 rounded-xl font-medium"
+                  onClick={() => {
+                    createConversation();
+                    void navigate({ to: "/screen" });
+                  }}
+                >
+                  <ArrowLeft size={14} /> New Session
+                </Button>
+              </div>
             </div>
 
             <div className="flex min-h-0 flex-1 flex-col px-4">
