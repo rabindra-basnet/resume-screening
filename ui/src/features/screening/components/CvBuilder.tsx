@@ -1,14 +1,10 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type {
   ChatMessage,
   ChatProposedEdit,
   FullReviewResult,
-  JobDescription,
-  LlmModelInfo,
-  ApplyDecision,
-  JobApplicationResult,
 } from "@/shared/types";
-import { api, errMsg } from "@/shared/api/client";
+import { errMsg } from "@/shared/api/client";
 import {
   runResumeReview,
   createEditSession,
@@ -17,9 +13,6 @@ import {
   applyChatEdit,
   undoEdit,
   redoEdit,
-  checkReadiness,
-  listLlmModels,
-  listJobDescriptions,
 } from "../api/cv";
 import {
   useConversations,
@@ -27,7 +20,8 @@ import {
 } from "../hooks/useConversations";
 import { ChatMessages } from "./ChatMessages";
 import { ChatComposer } from "./ChatComposer";
-import { WorkspacePanel, type SetupState } from "./WorkspacePanel";
+import { ResumeDocument } from "./ResumeDocument";
+import { type SetupState } from "./WorkspacePanel";
 import { Button } from "@/shared/components/ui/button";
 import { Textarea } from "@/shared/components/ui/textarea";
 import { Bot, Sparkles, Wand2, RefreshCw, ArrowLeft, Paperclip, Globe, Lightbulb, PenTool, Target } from "lucide-react";
@@ -64,7 +58,6 @@ export function CvBuilder() {
   } = useConversations();
 
   // ── workspace state ───────────────────────────────────────────────────────
-  const [panelTab, setPanelTab] = useState<"setup" | "report" | "resume">("setup");
   const [setup, setSetup] = useState<SetupState>({
     selectedFile: null,
     pastedText: "",
@@ -73,8 +66,6 @@ export function CvBuilder() {
     model: "",
     jobMode: "paste",
   });
-  const [savedJobs, setSavedJobs] = useState<JobDescription[]>([]);
-  const [models, setModels] = useState<LlmModelInfo[]>([]);
 
   // ── run state ─────────────────────────────────────────────────────────────
   const [busyReview, setBusyReview] = useState(false);
@@ -87,8 +78,6 @@ export function CvBuilder() {
   const [reviewResults, setReviewResults] = useState<FullReviewResult | null>(null);
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
-  const [readiness, setReadiness] = useState<ApplyDecision | null>(null);
-  const [applyResult, setApplyResult] = useState<string | null>(null);
   const [selection, setSelection] = useState<{
     text: string;
     startLine: number;
@@ -100,25 +89,7 @@ export function CvBuilder() {
   const messages = active?.messages ?? [];
   const hasSession = !!active && (!!chatId || !!editSessionId);
 
-  // Load saved JDs and model list once on mount.
-  useEffect(() => {
-    (async () => {
-      try {
-        const [jobs, modelResp] = await Promise.all([listJobDescriptions(), listLlmModels()]);
-        setSavedJobs(jobs || []);
-        setModels(modelResp.models || []);
-        setSetup((s) => ({ ...s, model: s.model || modelResp.default_model || modelResp.models?.[0]?.id || "" }));
-      } catch {
-        // Non-fatal; default model is used server-side.
-      }
-    })();
-  }, []);
-
   const patchSetup = (patch: Partial<SetupState>) => setSetup((s) => ({ ...s, ...patch }));
-
-  const setPanelForState = () => {
-    if (reviewResults) setPanelTab("report");
-  };
 
   // ── pipeline run: creates a conversation + backend session binding ───────
   const runPipeline = async (opts?: { demo?: boolean; promptFocus?: string }) => {
@@ -130,8 +101,6 @@ export function CvBuilder() {
     const file = isDemoMode ? null : setup.selectedFile;
 
     setError(null);
-    setApplyResult(null);
-    setReadiness(null);
     setBusyReview(true);
     setStatusText("[1/5] BrutalReviewAgent — auditing experience & gaps…");
 
@@ -197,14 +166,11 @@ export function CvBuilder() {
         editSessionId: edit.session_id,
         messages: [userBubble, greeting],
       });
-
-      setPanelTab("resume");
     } catch (err) {
       setError(errMsg(err));
     } finally {
       setBusyReview(false);
       setStatusText(null);
-      setPanelForState();
     }
   };
 
@@ -267,7 +233,6 @@ export function CvBuilder() {
       setCanUndo(res.undo_available);
       setCanRedo(res.redo_available);
       setResumeText(res.content);
-      setPanelTab("resume");
     } catch (err) {
       setError(errMsg(err));
     } finally {
@@ -329,40 +294,7 @@ export function CvBuilder() {
     }
   };
 
-  // ── readiness + apply ─────────────────────────────────────────────────────
-  const handleReadiness = async () => {
-    if (!chatId || !editSessionId) return;
-    setError(null);
-    try {
-      const res = await checkReadiness(
-        chatId,
-        editSessionId,
-        setup.jobDescription || undefined,
-        setup.model || undefined,
-      );
-      setReadiness(res);
-    } catch (err) {
-      setError(errMsg(err));
-    }
-  };
 
-  const handleApply = async () => {
-    if (!chatId || !editSessionId) return;
-    setError(null);
-    try {
-      const res = await api
-        .post(`/resume-chat/${encodeURIComponent(chatId)}/apply`, {
-          edit_session_id: editSessionId,
-          resume_text: resumeText,
-          cover_letter: "",
-          notes: "",
-        })
-        .then((r) => r.data as JobApplicationResult);
-      setApplyResult(res.message || `Application submitted (${res.status || "ok"})`);
-    } catch (err) {
-      setError(errMsg(err));
-    }
-  };
 
   const handleDemo = () => {
     setSetup((s) => ({
@@ -593,7 +525,6 @@ export function CvBuilder() {
                 className="gap-1.5 rounded-xl font-medium"
                 onClick={() => {
                   createConversation();
-                  setPanelTab("resume");
                 }}
               >
                 <ArrowLeft size={14} /> New Session
@@ -624,29 +555,16 @@ export function CvBuilder() {
             </div>
           </div>
 
-          {/* Documents column (Right) */}
-          <div className="flex h-full min-h-0 flex-col rounded-2xl border border-border/60 bg-card/70 p-3 backdrop-blur" data-testid="documents-column">
-            <WorkspacePanel
-              tab={panelTab}
-              onTabChange={setPanelTab}
-              setup={setup}
-              onSetupChange={patchSetup}
-              savedJobs={savedJobs}
-              models={models}
-              resumeContent={resumeText}
+          {/* Right Section: Document Preview ONLY */}
+          <div className="flex h-full min-h-0 flex-col rounded-2xl border border-border/60 bg-card/70 p-4 backdrop-blur shadow-sm" data-testid="documents-column">
+            <ResumeDocument
+              content={resumeText}
               canUndo={canUndo}
               canRedo={canRedo}
-              busyReview={busyReview}
-              busy={busyChat}
-              reviewResults={reviewResults}
-              readiness={readiness}
-              applyResult={applyResult}
-              onRunScreening={() => void runPipeline()}
-              onResumeContentChange={handleDocumentEdit}
+              busy={busyChat || busyReview}
+              onContentChange={handleDocumentEdit}
               onUndo={handleUndo}
               onRedo={handleRedo}
-              onReadiness={handleReadiness}
-              onApply={handleApply}
               onSelectionChange={setSelection}
             />
           </div>
