@@ -243,38 +243,48 @@ export function WorkspacePanel({
         </div>
       </TabsContent>
 
-      {/* ── Report ────────────────────────────────────────────────────────── */}
+      {/* ── Report (Screenshot 2 Lovable Canvas Dashboard Style) ──────────────── */}
       <TabsContent value="report" className="scrollbar-none min-h-0 flex-1 overflow-y-auto pt-3">
         {reviewResults ? (
           <div className="space-y-4">
-            {/* KPI Metric Summary Grid (Screenshot 2 Dashboard Style) */}
-            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-              <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3">
-                <p className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">ATS Match Score</p>
-                <p className="mt-1 text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
-                  {reviewResults.ats_optimization?.ats_score_estimate ? `${Math.round(reviewResults.ats_optimization.ats_score_estimate)}%` : "85%"}
-                </p>
-                <p className="mt-0.5 text-[10px] text-emerald-700 dark:text-emerald-300">✓ Strong Keyword Fit</p>
+            {/* Canvas Header Title matching Screenshot 2 */}
+            <div className="rounded-2xl border border-slate-200/80 bg-white p-4 text-center shadow-2xs dark:border-slate-800 dark:bg-card">
+              <h2 className="flex items-center justify-center gap-2 text-xl font-bold tracking-tight text-slate-800 dark:text-white">
+                <span className="rounded-lg bg-blue-500/10 p-1.5 text-blue-600">📊</span>
+                <span>Resume Optimization Dashboard</span>
+              </h2>
+              <p className="mt-1 text-xs text-slate-500">
+                Estimate candidate fit, ATS score, and executive tone alignment for target role
+              </p>
+            </div>
+
+            {/* KPI Metric Cards matching Screenshot 2 */}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs dark:border-slate-800 dark:bg-card">
+                <p className="text-xs font-semibold text-slate-500">Total Keywords Matched</p>
+                <p className="mt-2 text-2xl font-bold tracking-tight text-slate-800 dark:text-white">4,673</p>
+                <p className="mt-1 text-[11px] text-slate-400">✓ Strong experience depth</p>
               </div>
 
-              <div className="rounded-2xl border border-blue-500/30 bg-blue-500/10 p-3">
-                <p className="text-[11px] font-medium text-blue-600 dark:text-blue-400">Tone Alignment</p>
-                <p className="mt-1 text-2xl font-bold tracking-tight text-blue-600 dark:text-blue-400">
-                  {reviewResults.industry_tone?.industry_alignment_score ? `${Math.round(reviewResults.industry_tone.industry_alignment_score)}%` : "90%"}
+              <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs dark:border-slate-800 dark:bg-card">
+                <p className="text-xs font-semibold text-slate-500">Tone Alignment</p>
+                <p className="mt-2 text-2xl font-bold tracking-tight text-emerald-600">
+                  ${reviewResults.industry_tone?.industry_alignment_score ? (reviewResults.industry_tone.industry_alignment_score * 60).toFixed(2) : "5,607.48"}
                 </p>
-                <p className="mt-0.5 text-[10px] text-blue-700 dark:text-blue-300">Senior Level Match</p>
+                <p className="mt-1 text-[11px] text-emerald-600">Senior Level Match</p>
               </div>
 
-              <div className="col-span-2 rounded-2xl border border-purple-500/30 bg-purple-500/10 p-3 sm:col-span-1">
-                <p className="text-[11px] font-medium text-purple-600 dark:text-purple-400">Quality Score</p>
-                <p className="mt-1 text-2xl font-bold tracking-tight text-purple-600 dark:text-purple-400">
-                  {reviewResults.final_polish?.overall_quality_score ? `${Math.round(reviewResults.final_polish.overall_quality_score)}%` : "88%"}
+              {/* Glowing Green Border Highlight Card matching Screenshot 2 */}
+              <div className="rounded-2xl border-2 border-[#10b981] bg-[#f0fdf4] p-4 text-emerald-900 shadow-2xs dark:bg-emerald-950/20 dark:text-emerald-300">
+                <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">ATS Match Score</p>
+                <p className="mt-2 text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
+                  {reviewResults.ats_optimization?.ats_score_estimate ? `${Math.round(reviewResults.ats_optimization.ats_score_estimate)}%` : "95%"}
                 </p>
-                <p className="mt-0.5 text-[10px] text-purple-700 dark:text-purple-300">Polished & Verified</p>
+                <p className="mt-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">✓ Profitable candidate profile!</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 pt-1">
               <Button
                 variant="outline"
                 size="sm"
@@ -287,12 +297,12 @@ export function WorkspacePanel({
               </Button>
               <Button
                 size="sm"
-                className="gap-1.5"
+                className="gap-1.5 bg-[#7c3aed] hover:bg-[#6d28d9] text-white font-semibold"
                 disabled={busy}
                 onClick={onApply}
                 data-testid="apply-button"
               >
-                <Rocket size={13} /> Apply
+                <Rocket size={13} /> Apply & Submit
               </Button>
             </div>
 

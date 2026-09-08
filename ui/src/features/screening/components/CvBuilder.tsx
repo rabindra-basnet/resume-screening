@@ -391,33 +391,25 @@ export function CvBuilder() {
         </div>
       )}
 
-      {/* ROOT: quick-start conversational hero state (Screenshot 1 matching) */}
+      {/* ROOT: Page 1 — Hero Landing State (Matching Screenshot 1 pixel-for-pixel) */}
       {!hasSession ? (
-        <div className="mx-auto flex w-full max-w-2xl flex-col items-center justify-center px-2 py-10" data-testid="workspace-root">
-          {/* Glowing gradient orb logo */}
-          <div className="relative mb-4 flex items-center justify-center">
-            <div className="absolute h-16 w-16 animate-pulse rounded-full bg-blue-500/30 blur-xl" />
-            <div className="relative flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-tr from-cyan-500 via-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/20">
-              <Sparkles className="h-7 w-7 text-white" />
-            </div>
+        <div className="mx-auto flex min-h-[82vh] w-full max-w-3xl flex-col items-center justify-center px-4 py-6" data-testid="workspace-root">
+          {/* Glowing 3D Sphere Orb Header */}
+          <div className="relative mb-5 flex items-center justify-center">
+            <div className="h-16 w-16 rounded-full bg-gradient-to-tr from-cyan-400 via-blue-500 to-indigo-600 shadow-[0_0_35px_rgba(59,130,246,0.45)] transition-transform hover:scale-105" />
           </div>
 
           {/* Heading matching Screenshot 1 */}
-          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+          <h1 className="text-3xl font-bold tracking-tight text-[#1a1a1a] dark:text-white sm:text-4xl">
             What Can I help with?
           </h1>
-          <p className="mt-1.5 text-center text-xs text-muted-foreground sm:text-sm">
-            AI Agentic Resume Screening, ATS Keyword Optimization, & Bullet Point Enhancer
-          </p>
 
-          {/* Main Central Input Box Card */}
-          <div className="mt-6 w-full space-y-3 rounded-3xl border border-border/80 bg-card p-4 shadow-lg backdrop-blur" data-testid="quickstart-card">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label htmlFor="qs-resume" className="text-xs font-semibold text-muted-foreground">
-                  Resume Input
-                </label>
-                <label className="inline-flex cursor-pointer items-center gap-1 text-xs font-medium text-primary hover:underline">
+          {/* Main Central Input Box Card matching Screenshot 1 */}
+          <div className="mt-7 w-full rounded-2xl border border-slate-200/90 bg-white p-4 shadow-[0_4px_24px_rgba(0,0,0,0.04)] dark:border-slate-800 dark:bg-card" data-testid="quickstart-card">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between px-1">
+                <span className="text-xs font-semibold text-slate-400">Ask anything</span>
+                <label className="inline-flex cursor-pointer items-center gap-1 text-xs font-medium text-blue-600 hover:underline">
                   <span>Upload PDF/DOCX</span>
                   <input
                     type="file"
@@ -433,11 +425,11 @@ export function CvBuilder() {
               </div>
 
               {setup.selectedFile ? (
-                <div className="flex items-center justify-between rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3.5 py-2.5 text-sm font-medium text-emerald-600 dark:text-emerald-400">
+                <div className="flex items-center justify-between rounded-xl border border-emerald-500/40 bg-emerald-50 px-3.5 py-2 text-sm font-medium text-emerald-700">
                   <span className="truncate">{setup.selectedFile.name}</span>
                   <button
                     type="button"
-                    className="text-xs font-semibold text-muted-foreground hover:text-destructive"
+                    className="text-xs font-semibold text-slate-400 hover:text-red-500"
                     onClick={() => patchSetup({ selectedFile: null })}
                   >
                     remove
@@ -449,34 +441,30 @@ export function CvBuilder() {
                   value={setup.pastedText}
                   onChange={(e) => patchSetup({ pastedText: e.target.value, selectedFile: null })}
                   placeholder="Ask anything or paste job description / resume text…"
-                  rows={4}
-                  className="w-full resize-none border-none bg-transparent px-1 py-1 text-sm shadow-none focus-visible:ring-0"
+                  rows={3}
+                  className="w-full resize-none border-none bg-transparent px-1 py-1 text-sm text-slate-800 placeholder:text-slate-400 focus-visible:ring-0 dark:text-slate-100"
                   data-testid="qs-resume-input"
                 />
               )}
+
+              <div className="rounded-xl bg-slate-50/80 p-2.5 dark:bg-slate-900/50">
+                <Textarea
+                  id="qs-jd"
+                  value={setup.jobDescription}
+                  onChange={(e) => patchSetup({ jobDescription: e.target.value })}
+                  placeholder="Target Job Description (optional — improves ATS match scoring)…"
+                  rows={2}
+                  className="w-full resize-none border-none bg-transparent px-1 text-xs text-slate-700 placeholder:text-slate-400 focus-visible:ring-0 dark:text-slate-300"
+                  data-testid="qs-jd-input"
+                />
+              </div>
             </div>
 
-            {/* Optional Target Job Description */}
-            <div className="space-y-1 rounded-xl border border-border/40 bg-muted/20 p-2.5">
-              <label htmlFor="qs-jd" className="text-[11px] font-semibold text-muted-foreground">
-                Target Job Description <span className="font-normal text-muted-foreground/70">(Optional — unlocks ATS match scoring)</span>
-              </label>
-              <Textarea
-                id="qs-jd"
-                value={setup.jobDescription}
-                onChange={(e) => patchSetup({ jobDescription: e.target.value })}
-                placeholder="Paste the target job description here…"
-                rows={2}
-                className="w-full resize-none border-none bg-transparent px-1 text-xs shadow-none focus-visible:ring-0"
-                data-testid="qs-jd-input"
-              />
-            </div>
-
-            {/* Integrated Action Pills matching Screenshot 1 */}
-            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/40 pt-3">
-              <div className="flex flex-wrap items-center gap-1.5">
-                <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-border/60 bg-muted/60 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
-                  <Paperclip size={13} />
+            {/* In-Card Action Bar matching Screenshot 1 */}
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-medium text-slate-700 shadow-2xs transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                  <Paperclip size={13} className="text-slate-500" />
                   <span>Attach</span>
                   <input
                     type="file"
@@ -492,79 +480,83 @@ export function CvBuilder() {
                 <button
                   type="button"
                   onClick={() => patchSetup({ jobMode: setup.jobMode === "saved" ? "paste" : "saved" })}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/60 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-medium text-slate-700 shadow-2xs transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                 >
-                  <Globe size={13} />
-                  <span>Search JD</span>
+                  <Globe size={13} className="text-slate-500" />
+                  <span>Search</span>
                 </button>
 
                 <button
                   type="button"
-                  className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-medium text-slate-700 shadow-2xs transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                 >
-                  <Lightbulb size={13} className="text-amber-500 fill-amber-500/20" />
-                  <span>5-Agent Reason</span>
+                  <Lightbulb size={13} className="text-amber-500" />
+                  <span>Reason</span>
                 </button>
               </div>
 
               <Button
                 onClick={() => void runPipeline()}
                 disabled={busyReview || (!setup.selectedFile && !setup.pastedText.trim())}
-                className="gap-2 rounded-full bg-orange-500 font-semibold text-white shadow-md hover:bg-orange-600"
+                className="inline-flex items-center gap-1.5 rounded-full bg-[#ff5c00] px-5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-[#e55300]"
                 data-testid="run-screening"
               >
                 {busyReview ? (
                   <>
-                    <RefreshCw className="animate-spin" size={15} /> Screening…
+                    <RefreshCw className="animate-spin" size={13} /> Screening…
                   </>
                 ) : (
                   <>
-                    <Bot size={15} /> Voice / Run
+                    <Bot size={13} /> Voice
                   </>
                 )}
               </Button>
             </div>
           </div>
 
-          {/* Quick Prompt Suggestion Chips matching Screenshot 1 */}
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+          {/* Suggestion Chips Row Below Card matching Screenshot 1 */}
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5">
             <button
               type="button"
               onClick={() => void runPipeline({ promptFocus: "Full 5-Agent Resume Optimization" })}
-              className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card px-3.5 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:border-primary/50 hover:bg-primary/5 hover:text-primary shadow-2xs"
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-700 shadow-2xs transition-all hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-card dark:text-slate-300"
             >
-              <Sparkles size={13} className="text-primary" />
+              <Sparkles size={13} className="text-blue-500" />
               <span>Optimize Resume</span>
             </button>
             <button
               type="button"
               onClick={() => void runPipeline({ promptFocus: "Analyze ATS Keyword Gaps & Match Score" })}
-              className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card px-3.5 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:border-primary/50 hover:bg-primary/5 hover:text-primary shadow-2xs"
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-700 shadow-2xs transition-all hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-card dark:text-slate-300"
             >
-              <Target size={13} className="text-primary" />
+              <Target size={13} className="text-emerald-500" />
               <span>Analyze ATS Gaps</span>
             </button>
             <button
               type="button"
               onClick={() => void runPipeline({ promptFocus: "Transform Achievements to Action-Task-Result Bullets" })}
-              className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card px-3.5 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:border-primary/50 hover:bg-primary/5 hover:text-primary shadow-2xs"
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-700 shadow-2xs transition-all hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-card dark:text-slate-300"
             >
-              <Wand2 size={13} className="text-primary" />
+              <Wand2 size={13} className="text-purple-500" />
               <span>Bullet Transformer</span>
             </button>
             <button
               type="button"
               onClick={() => void runPipeline({ promptFocus: "Align Senior Industry Tone & Executive Summary" })}
-              className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card px-3.5 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:border-primary/50 hover:bg-primary/5 hover:text-primary shadow-2xs"
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-700 shadow-2xs transition-all hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-card dark:text-slate-300"
             >
-              <PenTool size={13} className="text-primary" />
+              <PenTool size={13} className="text-orange-500" />
               <span>Senior Tone Match</span>
             </button>
           </div>
 
+          <p className="mt-8 text-center text-[11px] text-slate-400">
+            By messaging AI, you agree to our <span className="underline">Terms</span> and have read our <span className="underline">Privacy Policy</span>
+          </p>
+
           <button
             type="button"
-            className="mt-5 text-center text-xs font-medium text-muted-foreground transition-colors hover:text-primary"
+            className="mt-3 text-center text-xs font-medium text-slate-500 hover:text-blue-600"
             onClick={handleDemo}
             disabled={busyReview}
             data-testid="run-demo"
@@ -573,11 +565,11 @@ export function CvBuilder() {
           </button>
 
           {busyReview && statusText && (
-            <p className="mt-4 text-center text-xs font-medium text-primary animate-pulse">{statusText}</p>
+            <p className="mt-4 text-center text-xs font-medium text-blue-600 animate-pulse">{statusText}</p>
           )}
         </div>
       ) : (
-        /* SESSION STATE: conversations rail | chat center | documents right */
+        /* Page 2 — Split-Screen Workspace (Matching Screenshot 2 Lovable style) */
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-[230px_minmax(0,1fr)_400px]">
           <div className="hidden min-h-0 xl:block">
             <ConversationsSidebar
