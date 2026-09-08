@@ -77,19 +77,23 @@ export function CvBuilder() {
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
 
-  // Split-screen resizable layout state (Right pane width percentage, default 45%)
+  // Split-screen resizable layout state (Right pane width percentage relative to container width, default 45%)
   const [rightWidthPct, setRightWidthPct] = useState(45);
   const [isResizing, setIsResizing] = useState(false);
 
   const handleMouseDownSplitter = (e: React.MouseEvent) => {
     e.preventDefault();
     setIsResizing(true);
+    const container = e.currentTarget.parentElement;
+    if (!container) return;
+
+    const rect = container.getBoundingClientRect();
 
     const onMouseMove = (moveEvent: MouseEvent) => {
-      const containerWidth = window.innerWidth;
-      if (!containerWidth) return;
-      // Calculate right pane width percentage from right side of window
-      const newRightWidthPct = ((containerWidth - moveEvent.clientX) / containerWidth) * 100;
+      if (!rect.width) return;
+      // Calculate right pane width percentage relative to container bounds
+      const mouseOffsetFromRight = rect.right - moveEvent.clientX;
+      const newRightWidthPct = (mouseOffsetFromRight / rect.width) * 100;
       // Clamp between 20% and 80%
       const clampedPct = Math.min(Math.max(newRightWidthPct, 20), 80);
       setRightWidthPct(clampedPct);
