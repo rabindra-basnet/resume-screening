@@ -67,22 +67,43 @@ export function CvBuilder() {
     jobMode: "paste",
   });
 
-  // ── run state ─────────────────────────────────────────────────────────────
   const [busyReview, setBusyReview] = useState(false);
   const [busyChat, setBusyChat] = useState(false);
   const [statusText, setStatusText] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  // ── document + results ───────────────────────────────────────────────────
+  const [selection, setSelection] = useState<{ startLine: number; endLine: number; text: string } | null>(null);
   const [resumeText, setResumeText] = useState("");
   const [reviewResults, setReviewResults] = useState<FullReviewResult | null>(null);
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
-  const [selection, setSelection] = useState<{
-    text: string;
-    startLine: number;
-    endLine: number;
-  } | null>(null);
+
+  // Split-screen resizable layout state (Right pane width percentage, default 45%)
+  const [rightWidthPct, setRightWidthPct] = useState(45);
+  const [isResizing, setIsResizing] = useState(false);
+
+  const handleMouseDownSplitter = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      const containerWidth = window.innerWidth;
+      if (!containerWidth) return;
+      // Calculate right pane width percentage from right side of window
+      const newRightWidthPct = ((containerWidth - moveEvent.clientX) / containerWidth) * 100;
+      // Clamp between 20% and 80%
+      const clampedPct = Math.min(Math.max(newRightWidthPct, 20), 80);
+      setRightWidthPct(clampedPct);
+    };
+
+    const onMouseUp = () => {
+      setIsResizing(false);
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+  };
 
   const chatId = active?.chatId ?? null;
   const editSessionId = active?.editSessionId ?? null;
@@ -497,10 +518,14 @@ export function CvBuilder() {
           )}
         </div>
       ) : (
-        /* Page 2 — Split-Screen Workspace (2-Column Clean Layout: Left Chat | Right Document) */
-        <div className="grid h-full min-h-0 flex-1 grid-cols-1 gap-3 overflow-hidden lg:grid-cols-[minmax(0,1fr)_480px]">
+        /* Page 2 — Split-Screen Workspace (2-Column Clean Layout: Left Chat | Right Document with Resizable Handle) */
+        <div className="flex h-full min-h-0 flex-1 flex-col lg:flex-row gap-0 overflow-hidden relative select-none">
           {/* Chat column (Left) */}
-          <div className="flex h-full min-h-0 flex-col rounded-2xl border border-border/60 bg-card/70 backdrop-blur" data-testid="chat-column">
+          <div
+            className="flex h-full min-h-0 flex-col rounded-2xl border border-border/60 bg-card/70 backdrop-blur transition-all duration-75"
+            style={{ width: `calc(${100 - rightWidthPct}% - 6px)` }}
+            data-testid="chat-column"
+          >
             <div className="flex items-center justify-between gap-2 border-b border-border/40 px-4 py-3">
               <div className="flex min-w-0 items-center gap-2.5">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -555,8 +580,25 @@ export function CvBuilder() {
             </div>
           </div>
 
+          {/* Resizable Drag Splitter Divider */}
+          <div
+            onMouseDown={handleMouseDownSplitter}
+            className={`hidden lg:flex w-3 hover:w-3 items-center justify-center cursor-col-resize group z-20 shrink-0 transition-colors ${
+              isResizing ? "bg-primary/20" : "hover:bg-primary/10"
+            }`}
+            title="Drag to resize panels"
+          >
+            <div className={`w-1 h-8 rounded-full bg-border transition-colors group-hover:bg-primary ${
+              isResizing ? "bg-primary" : ""
+            }`} />
+          </div>
+
           {/* Right Section: Document Preview ONLY */}
-          <div className="flex h-full min-h-0 flex-col rounded-2xl border border-border/60 bg-card/70 p-4 backdrop-blur shadow-sm" data-testid="documents-column">
+          <div
+            className="flex h-full min-h-0 flex-col rounded-2xl border border-border/60 bg-card/70 p-4 backdrop-blur shadow-sm transition-all duration-75"
+            style={{ width: `${rightWidthPct}%` }}
+            data-testid="documents-column"
+          >
             <ResumeDocument
               content={resumeText}
               canUndo={canUndo}
