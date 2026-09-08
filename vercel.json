@@ -1,22 +1,16 @@
 {
-  "buildCommand": "cd ui && npm ci && npm run build",
-  "functions": {
-    "api/index.py": {
-      "maxDuration": 300
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "app": {
+      "root": ".",
+      "runtime": "container",
+      "entrypoint": "Dockerfile.vercel"
     }
   },
-  "routes": [
+  "rewrites": [
     {
-      "src": "/static/(.*)",
-      "dest": "/static/$1"
-    },
-    {
-      "src": "/assets/(.*)",
-      "dest": "/assets/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "api/index.py"
+      "source": "/(.*)",
+      "destination": { "service": "app" }
     }
   ]
 }

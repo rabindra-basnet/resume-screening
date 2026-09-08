@@ -54,7 +54,7 @@ Postgres/Neon ↔ SQLite          OpenAI / Anthropic / local
 - **Security:** Vercel BotID (bot protection, configured in the dashboard)
 - **Validation:** Pydantic v2
 - **Quality/security:** ruff (incl. security rules), bandit, mypy, pytest, pre-commit
-- **Deploy target:** Vercel Fluid Compute (`api/index.py`, `vercel.json`)
+- **Deploy target:** Vercel container Function (`Dockerfile.vercel` multi-stage: Vite SPA + FastAPI + Tesseract, Granian in production)
 
 ## Getting started
 
@@ -194,17 +194,35 @@ uv run mypy app
 uv run pytest
 ```
 
-## Deployment (Vercel Fluid Compute)
+## Deployment (Vercel container image)
 
-- Entry point: `api/index.py` exports the ASGI `app`
-- Config: `vercel.json` builds the UI, serves static assets, and routes to the API
-  function with a 300s max duration
-- Serverless-aware design: cached config singleton, minimal top-level imports,
-  conservative DB pooling, in-process JD caching to avoid repeat LLM cost.
+Production is a **single multi-stage Docker image** (`Dockerfile.vercel`), not
+the native Python runtime. That image is what lets Tesseract (an OS binary)
+ship with the app — PyPI's `pytesseract` is only a wrapper.
+
+| Stage | Base | What it produces |
+|-------|------|------------------|
+| `ui` | `node:20-bookworm-slim` | Vite SPA (`ui/dist`) |
+| `runtime` | `python:3.12-slim` | FastAPI + Tesseract + Granian |
+
+The runtime serves both `/api/v1/*` and the SPA. The production HTTP server is
+**Granian** (ASGI). Uvicorn is kept only for local `honcho` / `cli_entry`.
+
+See [Deploy Python apps on Vercel using Docker](https://vercel.com/kb/guide/vercel-docker-python-apps).
+
+In the Vercel dashboard, set the project **Framework** to **Services**, then:
 
 ```bash
-uv run vercel --prod      # static UI + API function in one deploy
+vercel deploy --prod
 ```
+
+Local container routing:
+
+```bash
+vercel dev -L
+```
+
+Local app development without Docker still uses Honcho (`uv run honcho start`).
 
 ## Roadmap
 
@@ -226,6 +244,9 @@ uv run vercel --prod      # static UI + API function in one deploy
   Standard Vercel deployment lifecycle behavior during build bundle cleanup.
 - **`{"error": "internal_error"}` on Production**:
   Emitted by FastAPI's unhandled exception handler when a server-side exception occurs (most commonly caused by missing Vercel environment variables such as `DATABASE_URL`, `SESSION_SECRET`, `GOOGLE_CLIENT_ID`, or `LLM_API_KEY`). Ensure all production secrets are configured in the Vercel project settings.
+- **Image / scanned PDF yields no text**:
+  Confirm production is the `Dockerfile.vercel` container (Tesseract is an OS
+  package, not a pip wheel) and the Vercel project framework is **Services**.
 
 ## License
 

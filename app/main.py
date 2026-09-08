@@ -14,7 +14,7 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.api.v1 import (
@@ -144,6 +144,9 @@ def create_app() -> FastAPI:
 
         @app.get("/{spa_path:path}", include_in_schema=False, response_model=None)
         async def spa_fallback(spa_path: str):
+            # Never mask API misses with the SPA — those must stay JSON 404s.
+            if spa_path == "api" or spa_path.startswith("api/"):
+                return JSONResponse({"detail": "Not Found"}, status_code=404)
             # Serve existing static assets (js/css/fonts/icons).
             target = UI_DIST / spa_path
             if spa_path and target.is_file():

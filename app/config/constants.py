@@ -23,6 +23,11 @@ DEFAULT_TEMPERATURE: float = 0.1
 DEFAULT_TIMEOUT_SECONDS: int = 60
 DEFAULT_MAX_RETRIES: int = 3
 
+# ===== Image-PDF OCR (Tesseract in Docker; vision LLM as last resort) =====
+OCR_MAX_PAGES: int = 8
+OCR_RENDER_DPI: int = 144
+OCR_MAX_TOKENS: int = 4000
+
 # ===== Database =====
 SQLITE_FILENAME: str = "screening.db"
 
