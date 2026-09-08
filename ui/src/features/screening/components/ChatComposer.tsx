@@ -15,19 +15,29 @@ export function ChatComposer({
   canUndo,
   canRedo,
   hasSelection,
+  selectedFile,
+  jobDescription,
   onSend,
   onUndo,
   onRedo,
   onAttachFile,
+  onRemoveFile,
+  onJobDescriptionChange,
+  submitLabel = "Send",
 }: {
   busy: boolean;
-  canUndo: boolean;
-  canRedo: boolean;
-  hasSelection: boolean;
-  onSend: (content: string) => void;
-  onUndo: () => void;
-  onRedo: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
+  hasSelection?: boolean;
+  selectedFile?: File | null;
+  jobDescription?: string;
+  onSend: (content: string, opts?: { file?: File | null; jobDescription?: string }) => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
   onAttachFile?: (file: File) => void;
+  onRemoveFile?: () => void;
+  onJobDescriptionChange?: (jd: string) => void;
+  submitLabel?: string;
 }) {
   const [input, setInput] = useState("");
   const [searchActive, setSearchActive] = useState(false);
@@ -37,9 +47,9 @@ export function ChatComposer({
 
   const send = (text?: string) => {
     const content = (text ?? input).trim();
-    if (!content || busy) return;
+    if ((!content && !selectedFile) || busy) return;
     setInput("");
-    onSend(content);
+    onSend(content, { file: selectedFile, jobDescription });
   };
 
   const handleVoiceToggle = () => {
@@ -61,7 +71,7 @@ export function ChatComposer({
               type="button"
               disabled={busy}
               onClick={() => send(qp.prompt)}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border/80 bg-card/80 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:border-primary/50 hover:bg-primary/5 hover:text-primary disabled:opacity-50 shadow-2xs"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border/80 bg-card/80 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:border-primary/50 hover:bg-primary/5 hover:text-primary disabled:opacity-50 shadow-2xs cursor-pointer"
             >
               <Icon size={12} className="text-primary" />
               {qp.label}
@@ -71,7 +81,7 @@ export function ChatComposer({
       </div>
 
       {/* Main Composer Box with Integrated Action Pills */}
-      <div className="relative rounded-2xl border border-border/70 bg-card p-2.5 shadow-sm transition-all focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20">
+      <div className="relative rounded-2xl border border-border/70 bg-card p-3 shadow-sm transition-all focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20">
         <input
           ref={fileInputRef}
           type="file"
@@ -83,6 +93,21 @@ export function ChatComposer({
           }}
         />
 
+        {selectedFile && (
+          <div className="mb-2 flex items-center justify-between rounded-xl border border-emerald-500/40 bg-emerald-50/70 dark:bg-emerald-950/20 px-3 py-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-300">
+            <span className="truncate">📎 {selectedFile.name}</span>
+            {onRemoveFile && (
+              <button
+                type="button"
+                className="text-[11px] font-semibold text-muted-foreground hover:text-red-500"
+                onClick={onRemoveFile}
+              >
+                remove
+              </button>
+            )}
+          </div>
+        )}
+
         <Textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -92,24 +117,37 @@ export function ChatComposer({
               send();
             }
           }}
-          rows={1}
+          rows={2}
           placeholder={
             hasSelection
               ? "Describe the change for selected resume lines…"
-              : "Ask anything or paste job description..."
+              : "Ask anything or paste job description / resume text…"
           }
-          className="max-h-32 min-h-11 w-full resize-none border-none bg-transparent px-1 py-1 text-sm shadow-none focus-visible:ring-0"
+          className="max-h-36 min-h-12 w-full resize-none border-none bg-transparent px-1 py-1 text-sm shadow-none focus-visible:ring-0"
           data-testid="chat-input"
         />
 
+        {onJobDescriptionChange && (
+          <div className="mt-1 rounded-xl bg-slate-50/80 p-2 dark:bg-slate-900/50">
+            <Textarea
+              value={jobDescription || ""}
+              onChange={(e) => onJobDescriptionChange(e.target.value)}
+              placeholder="Target Job Description (optional — improves ATS match scoring)…"
+              rows={2}
+              className="w-full resize-none border-none bg-transparent px-1 text-xs text-slate-700 placeholder:text-slate-400 focus-visible:ring-0 dark:text-slate-300"
+              data-testid="qs-jd-input"
+            />
+          </div>
+        )}
+
         {/* Action Bar Pills (Attach, Search, Reason, Voice/Send) */}
-        <div className="mt-2 flex items-center justify-between gap-2 border-t border-border/40 pt-2">
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-border/40 pt-2">
           <div className="flex items-center gap-1.5 overflow-x-auto">
             <button
               type="button"
               disabled={busy}
               onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/50 px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/50 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50 cursor-pointer"
             >
               <Paperclip size={12} />
               <span>Attach</span>
@@ -119,7 +157,7 @@ export function ChatComposer({
               type="button"
               disabled={busy}
               onClick={() => setSearchActive((v) => !v)}
-              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
                 searchActive
                   ? "border-primary/50 bg-primary/10 text-primary"
                   : "border-border/60 bg-muted/50 text-muted-foreground hover:bg-muted"
@@ -133,7 +171,7 @@ export function ChatComposer({
               type="button"
               disabled={busy}
               onClick={() => setReasonActive((v) => !v)}
-              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
                 reasonActive
                   ? "border-primary/50 bg-primary/10 text-primary"
                   : "border-border/60 bg-muted/50 text-muted-foreground hover:bg-muted"
@@ -159,8 +197,8 @@ export function ChatComposer({
             <button
               type="button"
               onClick={handleVoiceToggle}
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-white transition-transform active:scale-95 ${
-                isRecording ? "bg-red-500 animate-pulse" : "bg-orange-500 hover:bg-orange-600 shadow-xs"
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-white transition-transform active:scale-95 cursor-pointer ${
+                isRecording ? "bg-red-500 animate-pulse" : "bg-[#ff5c00] hover:bg-[#e55300] shadow-xs"
               }`}
             >
               <Mic size={13} />
@@ -168,13 +206,14 @@ export function ChatComposer({
             </button>
 
             <Button
-              size="icon"
-              className="h-8 w-8 rounded-full"
-              disabled={busy || !input.trim()}
+              size="sm"
+              className="h-8 gap-1.5 rounded-full px-3 text-xs bg-primary text-primary-foreground font-semibold hover:bg-primary/90 cursor-pointer"
+              disabled={busy || (!input.trim() && !selectedFile)}
               onClick={() => send()}
               data-testid="chat-send"
             >
-              <SendHorizontal size={14} />
+              <span>{submitLabel}</span>
+              <SendHorizontal size={13} />
             </Button>
           </div>
         </div>

@@ -24,8 +24,7 @@ import { ChatComposer } from "./ChatComposer";
 import { ResumeDocument } from "./ResumeDocument";
 import { type SetupState } from "./WorkspacePanel";
 import { Button } from "@/shared/components/ui/button";
-import { Textarea } from "@/shared/components/ui/textarea";
-import { Bot, Sparkles, Wand2, RefreshCw, ArrowLeft, Paperclip, Globe, Lightbulb, PenTool, Target } from "lucide-react";
+import { Bot, Sparkles, Wand2, ArrowLeft, PenTool, Target } from "lucide-react";
 
 const SAMPLE_RESUME_TEXT = `Alex Chen
 Senior Software Engineer
@@ -376,114 +375,25 @@ export function CvBuilder() {
             What Can I help with?
           </h1>
 
-          {/* Main Central Input Box Card matching Screenshot 1 */}
-          <div className="mt-5 w-full rounded-2xl border border-slate-200/90 bg-white p-4 shadow-[0_4px_24px_rgba(0,0,0,0.04)] dark:border-slate-800 dark:bg-card" data-testid="quickstart-card">
-            <div className="space-y-2.5">
-              <div className="flex items-center justify-between px-1">
-                <span className="text-xs font-semibold text-slate-400">Ask anything</span>
-                <label className="inline-flex cursor-pointer items-center gap-1 text-xs font-medium text-blue-600 hover:underline">
-                  <span>Upload PDF/DOCX</span>
-                  <input
-                    type="file"
-                    accept=".pdf,.docx"
-                    className="hidden"
-                    data-testid="qs-file-input"
-                    onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      if (f) patchSetup({ selectedFile: f, pastedText: "" });
-                    }}
-                  />
-                </label>
-              </div>
-
-              {setup.selectedFile ? (
-                <div className="flex items-center justify-between rounded-xl border border-emerald-500/40 bg-emerald-50 px-3.5 py-2 text-sm font-medium text-emerald-700">
-                  <span className="truncate">{setup.selectedFile.name}</span>
-                  <button
-                    type="button"
-                    className="text-xs font-semibold text-slate-400 hover:text-red-500"
-                    onClick={() => patchSetup({ selectedFile: null })}
-                  >
-                    remove
-                  </button>
-                </div>
-              ) : (
-                <Textarea
-                  id="qs-resume"
-                  value={setup.pastedText}
-                  onChange={(e) => patchSetup({ pastedText: e.target.value, selectedFile: null })}
-                  placeholder="Ask anything or paste job description / resume text…"
-                  rows={3}
-                  className="w-full resize-none border-none bg-transparent px-1 py-1 text-sm text-slate-800 placeholder:text-slate-400 focus-visible:ring-0 dark:text-slate-100"
-                  data-testid="qs-resume-input"
-                />
-              )}
-
-              <div className="rounded-xl bg-slate-50/80 p-2 dark:bg-slate-900/50">
-                <Textarea
-                  id="qs-jd"
-                  value={setup.jobDescription}
-                  onChange={(e) => patchSetup({ jobDescription: e.target.value })}
-                  placeholder="Target Job Description (optional — improves ATS match scoring)…"
-                  rows={2}
-                  className="w-full resize-none border-none bg-transparent px-1 text-xs text-slate-700 placeholder:text-slate-400 focus-visible:ring-0 dark:text-slate-300"
-                  data-testid="qs-jd-input"
-                />
-              </div>
-            </div>
-
-            {/* In-Card Action Bar matching Screenshot 1 */}
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
-              <div className="flex flex-wrap items-center gap-2">
-                <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-medium text-slate-700 shadow-2xs transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                  <Paperclip size={13} className="text-slate-500" />
-                  <span>Attach</span>
-                  <input
-                    type="file"
-                    accept=".pdf,.docx"
-                    className="hidden"
-                    onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      if (f) patchSetup({ selectedFile: f, pastedText: "" });
-                    }}
-                  />
-                </label>
-
-                <button
-                  type="button"
-                  onClick={() => patchSetup({ jobMode: setup.jobMode === "saved" ? "paste" : "saved" })}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-medium text-slate-700 shadow-2xs transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                >
-                  <Globe size={13} className="text-slate-500" />
-                  <span>Search</span>
-                </button>
-
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-medium text-slate-700 shadow-2xs transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                >
-                  <Lightbulb size={13} className="text-amber-500" />
-                  <span>Reason</span>
-                </button>
-              </div>
-
-              <Button
-                onClick={() => void runPipeline()}
-                disabled={busyReview || (!setup.selectedFile && !setup.pastedText.trim())}
-                className="inline-flex items-center gap-1.5 rounded-full bg-[#ff5c00] px-5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-[#e55300]"
-                data-testid="run-screening"
-              >
-                {busyReview ? (
-                  <>
-                    <RefreshCw className="animate-spin" size={13} /> Screening…
-                  </>
-                ) : (
-                  <>
-                    <Bot size={13} /> Voice
-                  </>
-                )}
-              </Button>
-            </div>
+          {/* Unified Central Chatbox Card matching Screenshot 1 */}
+          <div className="mt-5 w-full" data-testid="quickstart-card">
+            <ChatComposer
+              busy={busyReview}
+              selectedFile={setup.selectedFile}
+              jobDescription={setup.jobDescription}
+              submitLabel={busyReview ? "Screening…" : "Voice"}
+              onSend={(promptText) => {
+                if (promptText) {
+                  patchSetup({ pastedText: promptText });
+                  void runPipeline({ promptFocus: promptText });
+                } else {
+                  void runPipeline();
+                }
+              }}
+              onAttachFile={(f) => patchSetup({ selectedFile: f, pastedText: "" })}
+              onRemoveFile={() => patchSetup({ selectedFile: null })}
+              onJobDescriptionChange={(jd) => patchSetup({ jobDescription: jd })}
+            />
           </div>
 
           {/* Suggestion Chips Row Below Card matching Screenshot 1 */}
