@@ -24,7 +24,11 @@ class LLMProviderConfig(BaseModel):
 
     llm_provider: str = "openai"
     llm_model: str = "gpt-4o-mini"
-    llm_api_key: str = Field(default="")
+    # Placeholder key so the OpenAI-compatible client always sees an api_key.
+    # Swap it via LLM_API_KEY when moving to a paid provider; the dummy value
+    # only matters to satisfy client construction for keyless/self-hosted
+    # OpenAI-compatible endpoints.
+    llm_api_key: str = Field(default="sk-dummy")
     llm_api_base: str | None = None
     llm_max_tokens: int = 2000
     llm_temperature: float = 0.1
@@ -61,7 +65,10 @@ class Settings(BaseSettings):
     # ── LLM provider ──────────────────────────────────────────────────
     llm_provider: str = "openai"
     llm_model: str = "gpt-4o-mini"
-    llm_api_key: str = Field(default="", description="API key for primary provider")
+    # Placeholder key (see LLMProviderConfig): keeps the OpenAI-compatible
+    # client constructible while ''LLM_API_KEY'' is unset; replace on Vercel
+    # when moving to a paid provider.
+    llm_api_key: str = Field(default="sk-dummy", description="API key for primary provider")
     llm_api_base: str | None = None
     llm_fallback_model: str | None = None
     llm_fallback_api_key: str | None = None

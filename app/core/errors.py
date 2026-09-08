@@ -52,6 +52,14 @@ def register_exception_handlers(app: FastAPI) -> None:
                 value = getattr(exc, "description", None)
             if value:
                 body[field] = str(value)
+
+        # Surface actionable detail from known application-domain exceptions
+        # (LLM failures, document parsing, structured output, etc.) so the
+        # client can show the user what actually went wrong. Unrecognised
+        # exceptions keep the generic body (full traceback stays server-side).
+        message = getattr(exc, "message", None) or str(exc)
+        if message and message != "An unexpected error occurred. Please try again later.":
+            body["error_description"] = message
         return JSONResponse(status_code=500, content=body)
 
     @app.exception_handler(RequestValidationError)
