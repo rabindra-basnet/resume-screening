@@ -1,16 +1,11 @@
-# Multi-stage production image for Vercel container Functions.
-# Stage 1 builds the Vite SPA. Stage 2 runs FastAPI with Tesseract OCR
-# behind Granian (production ASGI). Uvicorn is only for local `honcho`.
+# Multi-stage production container image.
+# Stage 1 builds the Vite React SPA. Stage 2 runs FastAPI with Tesseract OCR
+# behind Granian (production ASGI server).
 
 FROM node:22-bookworm-slim AS ui
 
 WORKDIR /src/ui
 COPY ui/package.json ui/package-lock.json ./
-# Production container only needs build-time deps; skip the test/lint tooling
-# (cypress, eslint — declared as optionalDependencies) to avoid bloat and the
-# EBADENGINE + eslint deprecation install warnings. Rollup ships its native
-# binary as an optional dependency, so re-add the matching one for this arch
-# after the reduced install to keep `vite build` working.
 RUN npm ci --omit=optional \
   && npm install --no-save --package-lock=false "$(node -e "const p=process.platform,a=process.arch,l=process.env.OPENCODE_LIBC||'gnu';console.log('@rollup/rollup-'+p+'-'+a+(p==='linux'?'-'+l:''))")"
 COPY ui/ ./
@@ -44,12 +39,9 @@ COPY migrations ./migrations
 
 RUN uv sync --frozen --no-dev --no-editable
 
-# Copy built frontend output to ./ui/dist for FastAPI app.frontend()
+# Copy built frontend assets to ./ui/dist for FastAPI app.frontend()
 COPY --from=ui /src/ui/dist ./ui/dist
 
 EXPOSE 80
 
-# Absolute venv path: Vercel overwrites PATH at runtime, so `granian` is not
-# on the shell PATH (that caused FUNCTION_INVOCATION_FAILED / exit 127).
-# Granian is the production ASGI server; Uvicorn is local-dev only.
 CMD ["sh", "-c", "exec /app/.venv/bin/granian --interface asgi --host 0.0.0.0 --port ${PORT:-80} app.main:app"]

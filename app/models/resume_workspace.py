@@ -32,10 +32,17 @@ class ResumeChatCreate(BaseModel):
     Attributes:
         resume_text: The current full resume text.
         resume_id: Optional id of the source resume/review.
+        job_description: Optional target job description used to ground the
+            conversation and tailor edits to a role.
+        industry: Optional target industry.
+        model_override: Optional LLM model override for the conversation.
     """
 
     resume_text: str
     resume_id: str | None = None
+    job_description: str = ""
+    industry: str = ""
+    model_override: str | None = None
 
 
 class ResumeChatRequest(BaseModel):
@@ -43,9 +50,11 @@ class ResumeChatRequest(BaseModel):
 
     Attributes:
         content: The user's message.
+        model_override: Optional LLM model override for this turn.
     """
 
     content: str
+    model_override: str | None = None
 
 
 class ChatContext(BaseModel):

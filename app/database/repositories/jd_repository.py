@@ -72,6 +72,24 @@ class JDRepository:
         """
         return await self.session.get(JobDescriptionModel, jd_id)
 
+    async def list(self, limit: int = 50) -> list[JobDescription]:
+        """Return the most recently persisted job descriptions.
+
+        Args:
+            limit: Maximum number of rows to return.
+
+        Returns:
+            A list of :class:`JobDescription` rows, newest first.
+        """
+        stmt = (
+            select(JobDescriptionModel)
+            .order_by(JobDescriptionModel.created_at.desc())
+            .limit(limit)
+        )
+        result = await self.session.execute(stmt)
+        rows = result.scalars().all()
+        return [self._from_model(row) for row in rows]
+
     async def find_by_text(self, raw_text: str) -> JobDescription | None:
         """Look up a job description by its raw text hash.
 

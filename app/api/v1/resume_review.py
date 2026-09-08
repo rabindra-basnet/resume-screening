@@ -21,7 +21,8 @@ router = APIRouter(tags=["resume-review"])
 async def run_resume_review(
     user: UserModel | None = Depends(get_current_user_or_none),
     service: ResumeReviewService = Depends(get_resume_review_service),
-    resume: UploadFile = File(...),
+    resume: UploadFile | None = File(default=None),
+    resume_text: str = Form(default=""),
     review_type: str = Form(default="full"),
     industry: str = Form(default=""),
     job_description: str = Form(default=""),
@@ -30,8 +31,9 @@ async def run_resume_review(
     """Run one (or all) of the resume review agents on an uploaded resume.
 
     Args:
-        ctx: Bundled session and authenticated user.
+        user: Optional authenticated user.
         resume: The resume file (PDF or DOCX) to review.
+        resume_text: Optional inline resume text (used instead of a file).
         review_type: Which review to run (full/brutal/ats/bullets/tone/polish).
         industry: Optional free-form target industry (tone matching).
         job_description: Optional JD text (ATS optimisation).
@@ -44,17 +46,22 @@ async def run_resume_review(
     Raises:
         HTTPException: For validation errors or document parsing failures.
     """
-    filename = (resume.filename or "").strip()
-    ext = filename.lower().rsplit(".", 1)[-1] if "." in filename else ""
-    if f".{ext}" not in ALLOWED_EXTENSIONS:
-        raise HTTPException(
-            status_code=400,
-            detail="Only PDF (.pdf) and Word (.docx) files are accepted",
-        )
+    if not resume_text.strip() and resume is None:
+        raise HTTPException(status_code=400, detail="resume file or resume_text is required")
 
-    content = await resume.read()
-    if len(content) > MAX_UPLOAD_BYTES:
-        raise HTTPException(status_code=413, detail="File exceeds the 10MB limit")
+    content: bytes | None = None
+    filename = ""
+    if resume is not None:
+        filename = (resume.filename or "").strip()
+        ext = filename.lower().rsplit(".", 1)[-1] if "." in filename else ""
+        if f".{ext}" not in ALLOWED_EXTENSIONS:
+            raise HTTPException(
+                status_code=400,
+                detail="Only PDF (.pdf) and Word (.docx) files are accepted",
+            )
+        content = await resume.read()
+        if len(content) > MAX_UPLOAD_BYTES:
+            raise HTTPException(status_code=413, detail="File exceeds the 10MB limit")
 
     if review_type not in ("full", "brutal", "ats", "bullets", "tone", "polish"):
         raise HTTPException(
@@ -69,6 +76,7 @@ async def run_resume_review(
     try:
         return await service.run_review(
             content,
+            resume_text=resume_text,
             resume_filename=filename,
             review_type=review_type,
             industry=industry,

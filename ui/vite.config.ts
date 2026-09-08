@@ -1,5 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-vite-plugin";
 
 // Build the React app into ./dist. The FastAPI backend mounts this folder as
@@ -7,6 +8,7 @@ import { tanstackRouter } from "@tanstack/router-vite-plugin";
 export default defineConfig({
   plugins: [
     react(),
+    tailwindcss(),
     tanstackRouter({
       target: "react",
       // Routes live in ./src/routes; the file-route tree is generated into

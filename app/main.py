@@ -14,7 +14,6 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.api.v1 import (
@@ -24,6 +23,7 @@ from app.api.v1 import (
     health_router,
     jd_router,
     learning_router,
+    llm_router,
     providers_router,
     resume_chat_router,
     resume_edit_router,
@@ -127,41 +127,18 @@ def create_app() -> FastAPI:
     app.include_router(screening_router, prefix=API_V1_PREFIX)
     app.include_router(providers_router, prefix=API_V1_PREFIX)
     app.include_router(learning_router, prefix=API_V1_PREFIX)
+    app.include_router(llm_router, prefix=API_V1_PREFIX)
     app.include_router(external_jobs_router, prefix=API_V1_PREFIX)
     app.include_router(resume_review_router, prefix=API_V1_PREFIX)
     app.include_router(resume_edit_router, prefix=API_V1_PREFIX)
     app.include_router(resume_chat_router, prefix=API_V1_PREFIX)
 
     # ── React SPA ──────────────────────────────────────────────────────
-    # Serve the built React app (ui/dist) as a single-page application.
-    # Handles static assets plus client-side routing fallback to index.html.
-    if UI_DIST.exists() and (UI_DIST / "index.html").is_file():
-        _index_html = (UI_DIST / "index.html").read_text(encoding="utf-8")
-
-        @app.get("/", include_in_schema=False)
-        async def spa_root() -> HTMLResponse:
-            return HTMLResponse(_index_html)
-
-        @app.get("/{spa_path:path}", include_in_schema=False, response_model=None)
-        async def spa_fallback(spa_path: str):
-            # Never mask API misses with the SPA — those must stay JSON 404s.
-            if spa_path == "api" or spa_path.startswith("api/"):
-                return JSONResponse({"detail": "Not Found"}, status_code=404)
-            # Serve existing static assets (js/css/fonts/icons).
-            target = UI_DIST / spa_path
-            if spa_path and target.is_file():
-                return FileResponse(target)
-            # Anything else returns index.html for the SPA's router.
-            return HTMLResponse(_index_html)
-    else:
-        logger.warning("React UI not built: %s. Run `npm run build` in ui/.", UI_DIST)
-
-        @app.get("/", include_in_schema=False)
-        async def placeholder_root() -> HTMLResponse:
-            return HTMLResponse(
-                "<h1>Resume Screening API</h1><p>React UI not built. "
-                "Run <code>npm run build</code> in <code>ui/</code>.</p>"
-            )
+    # Serve the built React app (ui/dist) as a single-page application using
+    # FastAPI's built-in frontend feature (FastAPI 0.115+).
+    # Automatically handles static assets, API route precedence, and fallback
+    # to index.html for client-side routing.
+    app.frontend("/", directory=UI_DIST)
 
     return app
 

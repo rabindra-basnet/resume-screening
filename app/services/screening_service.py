@@ -73,8 +73,9 @@ class ScreeningService:
 
     async def run_screening(
         self,
-        resume_bytes: bytes,
+        resume_bytes: bytes | None = None,
         *,
+        resume_text: str | None = None,
         resume_filename: str = "resume.pdf",
         job_description: str | None = None,
         jd_id: str | None = None,
@@ -84,9 +85,9 @@ class ScreeningService:
         """Run a full screening for a resume against a job description.
 
         Args:
-            resume_bytes: The raw resume document bytes (PDF or DOCX).
-            resume_filename: Original filename of the uploaded resume (used to
-                determine the document format).
+            resume_bytes: Optional raw resume document bytes (PDF or DOCX).
+            resume_text: Optional inline resume text (used when no file is uploaded).
+            resume_filename: Original filename of the uploaded resume.
             job_description: Optional inline job-description raw text. When
                 omitted, the JD is loaded from storage via ``jd_id``.
             jd_id: Optional id of a stored job description to load.
@@ -100,14 +101,21 @@ class ScreeningService:
         Raises:
             DocumentParsingError: If the resume document cannot be parsed.
             RuntimeError: If no job description can be resolved.
+            ValueError: If neither resume_bytes nor resume_text is provided.
         """
         started = time.monotonic()
 
-        # Upload the original document to configured storage backend.
-        blob_url = await self._upload_document(resume_bytes, resume_filename, user_id)
+        blob_url = None
+        if resume_text is not None and resume_text.strip():
+            extracted_text = resume_text.strip()
+        elif resume_bytes is not None:
+            blob_url = await self._upload_document(resume_bytes, resume_filename, user_id)
+            extracted_text = self.document_parser.extract_text(resume_bytes, resume_filename)
+        else:
+            raise ValueError("Either resume_bytes or resume_text is required")
 
         referenced_jd_id = jd_id
-        resume_text = self.document_parser.extract_text(resume_bytes, resume_filename)
+        resume_text = extracted_text
 
         # Resolve the orchestrator — uses user's BYOK provider if configured.
         orchestrator = await self._build_orchestrator_for_request()

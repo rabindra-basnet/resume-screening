@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class Education(BaseModel):
@@ -32,6 +32,24 @@ class WorkExperience(BaseModel):
     title: str | None = None
     years: float | None = None
 
+    @field_validator("years", mode="before")
+    @classmethod
+    def _coerce_years(cls, value: object) -> object:
+        """Tolerate LLM output like ``"2022 - Present"`` or ``"3.5"``.
+
+        Numeric strings are parsed directly; date ranges/ranges are ignored
+        (they are employment spans, not durations) and become ``None``.
+        """
+        if isinstance(value, str):
+            text = value.strip()
+            if not text:
+                return None
+            try:
+                return float(text)
+            except ValueError:
+                return None
+        return value
+
 
 class CandidateProfile(BaseModel):
     """Structured profile of a candidate parsed from raw resume text.
@@ -57,3 +75,14 @@ class CandidateProfile(BaseModel):
     certifications: list[str] = Field(default_factory=list)
     work_history: list[WorkExperience] = Field(default_factory=list)
     raw_summary: str | None = None
+
+    @field_validator("education", "skills", "certifications", "work_history", mode="before")
+    @classmethod
+    def _coerce_none_lists(cls, value: object) -> object:
+        """Coerce explicit ``null`` from the LLM into an empty list.
+
+        The extractor may emit null for list-shaped fields it cannot fill;
+        ``default_factory`` only applies when the key is absent, so this
+        validator tolerates ``None`` without failing validation.
+        """
+        return value if value is not None else []

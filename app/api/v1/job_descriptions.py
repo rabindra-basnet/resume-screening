@@ -17,6 +17,22 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/job-descriptions", tags=["job-descriptions"])
 
 
+@router.get("", response_model=list[JobDescription], summary="List job descriptions")
+async def list_job_descriptions(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> list[JobDescription]:
+    """Return the most recently stored job descriptions.
+
+    Args:
+        session: The injected async database session.
+
+    Returns:
+        A list of :class:`JobDescription` rows, newest first.
+    """
+    repo = JDRepository(session)
+    return await repo.list()
+
+
 @router.post("", response_model=JobDescription, status_code=201, summary="Create a job description")
 async def create_job_description(
     payload: JobDescriptionCreate,

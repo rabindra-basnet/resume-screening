@@ -1,4 +1,4 @@
-import { Link, Outlet } from "@tanstack/react-router";
+import { Link, Outlet, useMatchRoute } from "@tanstack/react-router";
 import { FileText, Sparkles, LogIn, LogOut } from "lucide-react";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import {
@@ -10,6 +10,76 @@ import { Button } from "@/shared/components/ui/button";
 
 export default function Layout() {
   const { user, logout } = useAuth();
+  const matchRoute = useMatchRoute();
+  const isWorkspace = !!matchRoute({ to: "/screen", fuzzy: true });
+
+  if (isWorkspace) {
+    // Full-page workspace: compact header keeps brand + account actions, and
+    // the screening chat fills the remaining viewport height.
+    return (
+      <div className="flex h-screen flex-col bg-background text-foreground selection:bg-primary selection:text-primary-foreground font-sans">
+        <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
+          <div className="mx-auto flex h-14 w-full max-w-[1600px] items-center justify-between gap-4 px-4 sm:px-6">
+            <Link to="/" className="flex items-center gap-2.5 no-underline group">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm transition-transform group-hover:scale-105">
+                <FileText size={18} />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm font-bold tracking-tight leading-tight">
+                  TalentPulse AI
+                </span>
+                <span className="text-[10px] font-medium text-muted-foreground">
+                  Agentic Workspace
+                </span>
+              </div>
+            </Link>
+
+            <div className="flex items-center gap-2">
+              {user ? (
+                <>
+                  <Link
+                    to="/account"
+                    activeProps={{ className: "ring-2 ring-primary/40 bg-muted" }}
+                    className="flex items-center gap-2 rounded-xl border border-border/60 px-2.5 py-1.5 text-xs font-semibold text-foreground no-underline transition-colors hover:bg-muted"
+                  >
+                    <Avatar className="h-6 w-6">
+                      {user.avatar_url ? (
+                        <AvatarImage src={user.avatar_url} alt={user.name} />
+                      ) : null}
+                      <AvatarFallback className="bg-primary/10 text-xs font-bold text-primary">
+                        {user.name?.charAt(0)?.toUpperCase() || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="hidden sm:inline">{user.name}</span>
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => logout()}
+                    className="flex items-center gap-1 rounded-xl border-0 bg-transparent px-2.5 py-1.5 text-xs font-medium text-muted-foreground cursor-pointer transition-colors hover:bg-destructive/10 hover:text-destructive"
+                    title="Sign out"
+                  >
+                    <LogOut size={14} />
+                    <span className="hidden sm:inline">Logout</span>
+                  </button>
+                </>
+              ) : (
+                <Link to="/login">
+                  <Button size="sm" variant="outline" className="gap-2 rounded-xl font-semibold">
+                    <LogIn size={14} />
+                    Sign In
+                  </Button>
+                </Link>
+              )}
+            </div>
+          </div>
+        </header>
+
+        <main className="min-h-0 flex-1 overflow-hidden">
+          <Outlet />
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground selection:bg-primary selection:text-primary-foreground font-sans">

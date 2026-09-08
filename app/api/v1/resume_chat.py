@@ -34,6 +34,8 @@ async def start_chat(
     """Create a new chat session for iterative resume review."""
     context = ChatContext(
         resume_text=payload.resume_text,
+        job_description=payload.job_description,
+        industry=payload.industry,
     )
     return await service.start_chat(
         user_id=user.id if user else None,
@@ -55,6 +57,7 @@ async def send_chat_message(
             chat_id=chat_id,
             user_id=user.id if user else None,
             content=payload.content,
+            model_override=payload.model_override,
         )
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -106,6 +109,7 @@ async def check_readiness(
     service: ResumeChatService = Depends(get_resume_chat_service),
     edit_session_id: str | None = None,
     job_description: str = "",
+    model_override: str | None = None,
 ) -> ApplyDecision:
     """Ask the readiness agent whether the edited resume is ready to apply."""
     if not edit_session_id:
@@ -114,6 +118,7 @@ async def check_readiness(
         return await service.decide_application(
             edit_session_id=edit_session_id,
             job_description=job_description,
+            model_override=model_override,
         )
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc

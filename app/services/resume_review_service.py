@@ -52,8 +52,9 @@ class ResumeReviewService:
 
     async def run_review(
         self,
-        resume_bytes: bytes,
+        resume_bytes: bytes | None = None,
         *,
+        resume_text: str | None = None,
         resume_filename: str = "resume.pdf",
         review_type: str = "full",
         industry: str = "",
@@ -64,7 +65,10 @@ class ResumeReviewService:
         """Run a resume review and persist the result.
 
         Args:
-            resume_bytes: The raw resume document bytes (PDF or DOCX).
+            resume_bytes: The raw resume document bytes (PDF or DOCX). Mutually
+                exclusive with ``resume_text``.
+            resume_text: Inline resume text (past the raw CV here). Mutually
+                exclusive with ``resume_bytes``.
             resume_filename: Original filename of the resume.
             review_type: Which review to run (full/brutal/ats/bullets/tone/polish).
             industry: Optional free-form target industry (for tone matching).
@@ -80,7 +84,14 @@ class ResumeReviewService:
         """
         started = time.monotonic()
 
-        resume_text = self.document_parser.extract_text(resume_bytes, resume_filename)
+        if resume_text is not None and resume_text.strip():
+            parse_text = resume_text
+        elif resume_bytes is not None:
+            parse_text = self.document_parser.extract_text(resume_bytes, resume_filename)
+        else:
+            raise ValueError("Either resume_bytes or resume_text is required")
+
+        resume_text = parse_text
 
         # Build orchestrator with the user's BYOK provider if configured.
         orchestrator = await self._build_orchestrator_for_request()

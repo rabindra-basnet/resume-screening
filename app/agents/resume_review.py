@@ -42,6 +42,18 @@ def _compact_profile(candidate: CandidateProfile | None) -> str:
     return candidate.model_dump_json(exclude_none=True)
 
 
+def _prior_block(prior_context: str) -> str:
+    """Normalize the prior-findings block for prompt injection.
+
+    Args:
+        prior_context: Compact findings from earlier pipeline stages.
+
+    Returns:
+        The block text, or a fallback when no prior findings exist.
+    """
+    return prior_context.strip() or "(no prior findings — you are the first agent in this pass)"
+
+
 class BrutalReviewAgent(BaseAgent[BrutalReviewResult]):
     """Simulate a senior hiring manager's unfiltered first-impression critique."""
 
@@ -53,6 +65,7 @@ class BrutalReviewAgent(BaseAgent[BrutalReviewResult]):
         candidate: CandidateProfile | None = None,
         *,
         industry: str = "",
+        prior_context: str = "",
         **kwargs: str,
     ) -> BrutalReviewResult:
         """Run the brutal honest review on a resume.
@@ -64,6 +77,7 @@ class BrutalReviewAgent(BaseAgent[BrutalReviewResult]):
             resume_text: Optional raw text of the resume.
             candidate: Optional parsed candidate profile (compact context).
             industry: Optional industry hint.
+            prior_context: Optional findings from earlier pipeline stages.
             **kwargs: Optional completion overrides.
 
         Returns:
@@ -80,6 +94,7 @@ class BrutalReviewAgent(BaseAgent[BrutalReviewResult]):
         user_prompt = BRUTAL_HONEST_REVIEW.format(
             candidate_context=context,
             industry_context=industry_context,
+            prior_context=_prior_block(prior_context),
         )
         return self._complete_and_parse(user_prompt, **kwargs)
 
@@ -93,6 +108,8 @@ class ATSOptimizerAgent(BaseAgent[ATSOptimizationResult]):
         self,
         candidate: CandidateProfile,
         job_description: str,
+        *,
+        prior_context: str = "",
         **kwargs: str,
     ) -> ATSOptimizationResult:
         """Run ATS optimisation analysis.
@@ -103,6 +120,7 @@ class ATSOptimizerAgent(BaseAgent[ATSOptimizationResult]):
         Args:
             candidate: The parsed candidate profile (compact).
             job_description: Raw text of the target job description.
+            prior_context: Optional findings from earlier pipeline stages.
             **kwargs: Optional completion overrides.
 
         Returns:
@@ -111,6 +129,7 @@ class ATSOptimizerAgent(BaseAgent[ATSOptimizationResult]):
         user_prompt = ATS_OPTIMIZER.format(
             candidate_context=_compact_profile(candidate),
             job_description=job_description,
+            prior_context=_prior_block(prior_context),
         )
         return self._complete_and_parse(user_prompt, **kwargs)
 
@@ -123,17 +142,27 @@ class BulletPointTransformerAgent(BaseAgent[BulletPointResult]):
 
     response_model = BulletPointResult
 
-    def run(self, resume_text: str, **kwargs: str) -> BulletPointResult:
+    def run(
+        self,
+        resume_text: str,
+        *,
+        prior_context: str = "",
+        **kwargs: str,
+    ) -> BulletPointResult:
         """Run bullet-point transformation.
 
         Args:
             resume_text: Raw text extracted from the resume.
+            prior_context: Optional findings from earlier pipeline stages.
             **kwargs: Optional completion overrides.
 
         Returns:
             A validated :class:`BulletPointResult`.
         """
-        user_prompt = BULLET_POINT_TRANSFORMER.format(resume_text=resume_text)
+        user_prompt = BULLET_POINT_TRANSFORMER.format(
+            resume_text=resume_text,
+            prior_context=_prior_block(prior_context),
+        )
         return self._complete_and_parse(user_prompt, **kwargs)
 
 
@@ -150,6 +179,8 @@ class IndustryToneMatchAgent(BaseAgent[IndustryToneResult]):
         self,
         candidate: CandidateProfile,
         industry: str,
+        *,
+        prior_context: str = "",
         **kwargs: str,
     ) -> IndustryToneResult:
         """Run industry tone matching.
@@ -157,6 +188,7 @@ class IndustryToneMatchAgent(BaseAgent[IndustryToneResult]):
         Args:
             candidate: The parsed candidate profile.
             industry: The target industry (free-form generic string).
+            prior_context: Optional findings from earlier pipeline stages.
             **kwargs: Optional completion overrides.
 
         Returns:
@@ -165,6 +197,7 @@ class IndustryToneMatchAgent(BaseAgent[IndustryToneResult]):
         user_prompt = INDUSTRY_TONE_MATCH.format(
             candidate_context=_compact_profile(candidate),
             industry=industry or "general",
+            prior_context=_prior_block(prior_context),
         )
         return self._complete_and_parse(user_prompt, **kwargs)
 
@@ -178,6 +211,8 @@ class FinalPolishAgent(BaseAgent[FinalPolishResult]):
         self,
         resume_text: str = "",
         candidate: CandidateProfile | None = None,
+        *,
+        prior_context: str = "",
         **kwargs: str,
     ) -> FinalPolishResult:
         """Run the final polish audit.
@@ -188,6 +223,7 @@ class FinalPolishAgent(BaseAgent[FinalPolishResult]):
         Args:
             resume_text: Optional raw text.
             candidate: Optional compact candidate profile.
+            prior_context: Optional findings from earlier pipeline stages.
             **kwargs: Optional completion overrides.
 
         Returns:
@@ -196,5 +232,8 @@ class FinalPolishAgent(BaseAgent[FinalPolishResult]):
         context = _compact_profile(candidate)
         if not context or context == "(no structured profile available)":
             context = resume_text or context
-        user_prompt = FINAL_POLISH.format(candidate_context=context)
+        user_prompt = FINAL_POLISH.format(
+            candidate_context=context,
+            prior_context=_prior_block(prior_context),
+        )
         return self._complete_and_parse(user_prompt, **kwargs)

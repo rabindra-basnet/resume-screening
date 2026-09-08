@@ -164,10 +164,14 @@ export interface ChatMessage {
 export interface ResumeChatCreateRequest {
   resume_text: string;
   resume_id?: string | null;
+  job_description?: string;
+  industry?: string;
+  model_override?: string | null;
 }
 
 export interface ResumeChatRequest {
   content: string;
+  model_override?: string | null;
 }
 
 export interface ChatProposedEdit {
@@ -275,4 +279,16 @@ export interface ApplyDecision {
   ready: boolean;
   application_status: "ready" | "needs_review" | "not_ready";
   summary: string;
+}
+
+// ── LLM models ───────────────────────────────────────────────────────────
+
+export interface LlmModelInfo {
+  id: string;
+  is_default: boolean;
+}
+
+export interface LlmModelsResponse {
+  default_model: string;
+  models: LlmModelInfo[];
 }

@@ -25,7 +25,12 @@ Return a valid JSON object:
 
 Candidate profile:
 {candidate_context}
+
+Prior agent findings (build on these — extend, correct, or deepen what earlier
+agents found; do not repeat them verbatim):
+{prior_context}
 """
+
 
 ATS_OPTIMIZER: str = """You are an Applicant Tracking System (ATS) optimisation expert.
 
@@ -47,13 +52,17 @@ Return a valid JSON object:
   "ats_score_estimate": 72,
   "summary": "overall ATS readiness assessment"
 }}
-
 Job description:
 {job_description}
 
 Candidate profile:
 {candidate_context}
+
+Prior agent findings (build on these — extend, correct, or deepen what earlier
+agents found; do not repeat them verbatim):
+{prior_context}
 """
+
 
 BULLET_POINT_TRANSFORMER: str = """You are an expert resume writer specialising in
 impact-driven bullet points.
@@ -82,6 +91,11 @@ Return a valid JSON object:
 
 Resume text:
 {resume_text}
+
+Prior agent findings (build on these — extend, correct, or deepen what earlier
+agents found; incorporate ATS keywords into rewritten bullets; do not repeat
+them verbatim):
+{prior_context}
 """
 
 INDUSTRY_TONE_MATCH: str = """You are a resume consultant who specialises in
@@ -101,12 +115,16 @@ Return a valid JSON object:
   "tone_analysis": "explain what was changed and why",
   "industry_alignment_score": 85
 }}
-
 Target industry: {industry}
 
 Candidate profile:
 {candidate_context}
+
+Prior agent findings (build on these — align the tone with the keywords and
+weak areas identified earlier; do not repeat them verbatim):
+{prior_context}
 """
+
 
 FINAL_POLISH: str = """You are a meticulous resume editor performing a final
 quality audit of a candidate profile.
@@ -146,4 +164,9 @@ Return a valid JSON object:
 
 Candidate profile:
 {candidate_context}
+
+Prior agent findings (incorporate the fixes suggested by all earlier agents —
+resolved bullets, tone edits, and ATS gaps should be reflected in your audit;
+do not repeat them verbatim):
+{prior_context}
 """

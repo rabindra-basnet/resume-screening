@@ -70,6 +70,37 @@ def _is_open_code_zen(base_url: str | None) -> bool:
     return OPENCODE_ZEN_HOST in base_url.replace("https://", "").replace("http://", "")
 
 
+def _is_structured_output_rejected(exc: Exception) -> bool:
+    """Return True when ``exc`` indicates the provider does not support structured output.
+
+    Gateways respond differently when they do not implement ``response_format``:
+    OpenAI raises ``BadRequestError``/``UnprocessableEntityError`` with status
+    400/422, while some proxies simply return a generic 404. Classify by status
+    code and message hints so we only degrade to plain completions for genuine
+    "unsupported param" failures and keep normal retry behaviour otherwise.
+
+    Args:
+        exc: The exception raised by the call.
+
+    Returns:
+        True when the failure is best handled by dropping ``response_format``.
+    """
+    status = getattr(exc, "status_code", None)
+    if status in (400, 404, 422):
+        return True
+    text = str(exc).lower()
+    return any(
+        hint in text
+        for hint in (
+            "response_format",
+            "json_schema",
+            "structured output",
+            "unsupported parameter",
+            "not support",
+        )
+    )
+
+
 class LLMError(Exception):
     """Base exception for LLM request failures."""
 
@@ -175,6 +206,68 @@ class LLMClient:
             kwargs["base_url"] = self.config.llm_api_base
         return OpenAI(**kwargs)
 
+    def list_models(
+        self, *, free_only: bool = False, timeout: float | None = None
+    ) -> list[dict]:
+        """List the models the configured gateway advertises.
+
+        Hits the OpenAI-compatible ``/models`` endpoint so the available set is
+        discovered dynamically from the live deployment rather than hardcoded.
+        For the OpenCode Zen gateway the same attribution/session headers are
+        sent so the keyless free tier is honoured.
+
+        Args:
+            free_only: When true, only return models usable without a paid key
+                (those whose ids end with a ``-free``/``contributor-free`` marker
+                on the OpenCode Zen gateway).
+            timeout: Optional request timeout in seconds.
+
+        Returns:
+            A list of model dicts (``id`` and any extra gateway metadata).
+
+        Raises:
+            LLMError: If the model list cannot be fetched.
+        """
+        base = (self.config.llm_api_base or "").rstrip("/")
+        if not base:
+            raise LLMError("LLM_API_BASE is not configured; cannot list models")
+        api_key = self.config.llm_api_key
+        is_placeholder = bool(api_key) and api_key.strip() == PLACEHOLDER_API_KEY
+        is_zen = _is_open_code_zen(self.config.llm_api_base)
+        headers: dict = {}
+        if is_zen:
+            headers = _open_code_headers(self.session_id)
+        if api_key and not is_placeholder:
+            headers["Authorization"] = f"Bearer {api_key}"
+        elif is_zen:
+            headers["Authorization"] = ""
+        timeout = timeout or self.config.llm_timeout_seconds or DEFAULT_TIMEOUT_SECONDS
+        try:
+            import httpx
+
+            resp = httpx.get(
+                f"{base}/models",
+                headers=headers,
+                timeout=timeout,
+            )
+            resp.raise_for_status()
+            models = resp.json().get("data", []) or []
+        except Exception as exc:  # noqa: BLE001 - normalize provider errors
+            raise LLMError(f"Failed to list models: {exc}") from exc
+
+        normalized: list[dict] = []
+        for m in models:
+            mid = str(m.get("id") or "").strip()
+            if not mid:
+                continue
+            normalized.append({"id": mid, **{k: v for k, v in m.items() if k != "id"}})
+
+        if free_only:
+            normalized = [
+                m for m in normalized if m["id"].endswith("-free")
+            ]
+        return normalized
+
     def complete(
         self,
         system_prompt: str,
@@ -183,6 +276,7 @@ class LLMClient:
         model: str | None = None,
         temperature: float | None = None,
         max_tokens: int | None = None,
+        response_format: dict | None = None,
     ) -> str:
         """Run an LLM completion and return the assistant message content.
 
@@ -192,6 +286,11 @@ class LLMClient:
             model: Optional model override; defaults to configured model.
             temperature: Optional temperature override.
             max_tokens: Optional max output token override.
+            response_format: Optional OpenAI-style structured-output specification
+                (e.g. ``{"type": "json_object"}`` or a ``json_schema`` object).
+                When the provider rejects it, the call degrades gracefully to a
+                plain completion so pipelines keep working on gateways that do
+                not implement structured output.
 
         Returns:
             The assistant's text response.
@@ -213,16 +312,21 @@ class LLMClient:
             {"role": "user", "content": user_prompt},
         ]
 
-        for attempt in range(1, retries + 1):
+        attempt = 0
+        while attempt < retries:
+            attempt += 1
             try:
                 client = self._build_client()
-                response = client.chat.completions.create(
-                    model=resolved_model,
-                    messages=messages,
-                    temperature=resolved_temperature,
-                    max_tokens=resolved_max_tokens,
-                    timeout=timeout,
-                )
+                kwargs: dict = {
+                    "model": resolved_model,
+                    "messages": messages,
+                    "temperature": resolved_temperature,
+                    "max_tokens": resolved_max_tokens,
+                    "timeout": timeout,
+                }
+                if response_format is not None:
+                    kwargs["response_format"] = response_format
+                response = client.chat.completions.create(**kwargs)
                 message = response.choices[0].message
                 content = message.content
                 # Some reasoning models (e.g. OpenCode Zen free reasoners) put
@@ -236,6 +340,18 @@ class LLMClient:
             except LLMError:
                 raise
             except Exception as exc:  # noqa: BLE001 - normalize provider errors
+                # Structured output is not implemented by every OpenAI-compatible
+                # gateway. Degrade to a plain completion instead of failing the
+                # whole pipeline; the base agent still extracts JSON textually.
+                if response_format is not None and _is_structured_output_rejected(exc):
+                    logger.warning(
+                        "Provider rejected response_format=%s; retrying without "
+                        "structured output. The base agent will parse JSON textually.",
+                        response_format,
+                    )
+                    response_format = None
+                    attempt -= 1
+                    continue
                 logger.warning("LLM call attempt %d/%d failed: %s", attempt, retries, exc)
                 if attempt == retries:
                     raise LLMError(f"LLM request failed after {retries} attempts: {exc}") from exc

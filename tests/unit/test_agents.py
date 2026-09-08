@@ -27,6 +27,7 @@ class _SampleModel(BaseModel):
     """A concrete model for exercising the base-agent parser."""
 
     status: str
+    nested: dict | None = None
 
 
 class _PassthroughModel(BaseAgent[_SampleModel]):
@@ -51,6 +52,23 @@ def test_parse_invalid_json_raises() -> None:
     agent = _PassthroughModel(client=_FakeClient(""))
     with pytest.raises(StructuredOutputError):
         agent.parse_response("not json {{{")
+
+
+def test_parse_markdown_fenced_json() -> None:
+    """LLM output wrapped in Markdown code fences is still parseable."""
+    agent = _PassthroughModel(client=_FakeClient(""))
+    raw = '```json\n{"status": "ok"}\n```'
+    parsed = agent.parse_response(raw)
+    assert parsed.status == "ok"
+
+
+def test_parse_json_with_prose_padding() -> None:
+    """LLM output with text before and after the JSON object is parseable."""
+    agent = _PassthroughModel(client=_FakeClient(""))
+    raw = 'Here is the review:\n{"status": "ok", "nested": {"kept": true}}\nHope that helps!'
+    parsed = agent.parse_response(raw)
+    assert parsed.status == "ok"
+    assert parsed.nested == {"kept": True}
 
 
 def test_resume_extractor_validates_model() -> None:

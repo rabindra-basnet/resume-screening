@@ -12,8 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as WorkspaceRouteRouteImport } from './routes/_workspace/route'
 import { Route as LoginRouteRouteImport } from './routes/login/route'
+import { Route as ScreenRouteImport } from './routes/screen'
 import { Route as WorkspaceAccountRouteImport } from './routes/_workspace/account'
-import { Route as WorkspaceScreenRouteImport } from './routes/_workspace/screen'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -29,6 +29,11 @@ const LoginRouteRoute = LoginRouteRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ScreenRoute = ScreenRouteImport.update({
+  id: '/screen',
+  path: '/screen',
+  getParentRoute: () => rootRouteImport,
+} as any).lazy(() => import('./routes/screen.lazy').then((d) => d.Route))
 const WorkspaceAccountRoute = WorkspaceAccountRouteImport.update({
   id: '/account',
   path: '/account',
@@ -36,52 +41,46 @@ const WorkspaceAccountRoute = WorkspaceAccountRouteImport.update({
 } as any).lazy(() =>
   import('./routes/_workspace/account.lazy').then((d) => d.Route),
 )
-const WorkspaceScreenRoute = WorkspaceScreenRouteImport.update({
-  id: '/screen',
-  path: '/screen',
-  getParentRoute: () => WorkspaceRouteRoute,
-} as any).lazy(() =>
-  import('./routes/_workspace/screen.lazy').then((d) => d.Route),
-)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRouteRoute
+  '/screen': typeof ScreenRoute
   '/account': typeof WorkspaceAccountRoute
-  '/screen': typeof WorkspaceScreenRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRouteRoute
+  '/screen': typeof ScreenRoute
   '/account': typeof WorkspaceAccountRoute
-  '/screen': typeof WorkspaceScreenRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_workspace': typeof WorkspaceRouteRouteWithChildren
   '/login': typeof LoginRouteRoute
+  '/screen': typeof ScreenRoute
   '/_workspace/account': typeof WorkspaceAccountRoute
-  '/_workspace/screen': typeof WorkspaceScreenRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/account' | '/screen'
+  fullPaths: '/' | '/login' | '/screen' | '/account'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/account' | '/screen'
+  to: '/' | '/login' | '/screen' | '/account'
   id:
     | '__root__'
     | '/'
     | '/_workspace'
     | '/login'
+    | '/screen'
     | '/_workspace/account'
-    | '/_workspace/screen'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   WorkspaceRouteRoute: typeof WorkspaceRouteRouteWithChildren
   LoginRouteRoute: typeof LoginRouteRoute
+  ScreenRoute: typeof ScreenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -107,6 +106,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/screen': {
+      id: '/screen'
+      path: '/screen'
+      fullPath: '/screen'
+      preLoaderRoute: typeof ScreenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_workspace/account': {
       id: '/_workspace/account'
       path: '/account'
@@ -114,24 +120,15 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceAccountRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
-    '/_workspace/screen': {
-      id: '/_workspace/screen'
-      path: '/screen'
-      fullPath: '/screen'
-      preLoaderRoute: typeof WorkspaceScreenRouteImport
-      parentRoute: typeof WorkspaceRouteRoute
-    }
   }
 }
 
 interface WorkspaceRouteRouteChildren {
   WorkspaceAccountRoute: typeof WorkspaceAccountRoute
-  WorkspaceScreenRoute: typeof WorkspaceScreenRoute
 }
 
 const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
   WorkspaceAccountRoute: WorkspaceAccountRoute,
-  WorkspaceScreenRoute: WorkspaceScreenRoute,
 }
 
 const WorkspaceRouteRouteWithChildren = WorkspaceRouteRoute._addFileChildren(
@@ -142,6 +139,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   WorkspaceRouteRoute: WorkspaceRouteRouteWithChildren,
   LoginRouteRoute: LoginRouteRoute,
+  ScreenRoute: ScreenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

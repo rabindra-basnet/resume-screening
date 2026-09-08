@@ -20,7 +20,8 @@ router = APIRouter(tags=["screening"])
 async def screen_resume(
     ctx: CurrentUserDep,
     service: ScreeningService = Depends(get_screening_service),
-    resume: UploadFile = File(...),
+    resume: UploadFile | None = File(default=None),
+    resume_text: str = Form(default=""),
     jd_id: str | None = Form(default=None),
     job_description: str | None = Form(default=None),
     model_override: str | None = Form(default=None),
@@ -29,7 +30,8 @@ async def screen_resume(
 
     Args:
         ctx: Bundled session and authenticated user.
-        resume: The resume file (PDF or DOCX) to screen.
+        resume: Optional resume file (PDF or DOCX) to screen.
+        resume_text: Optional inline resume text.
         jd_id: Optional id of a stored job description.
         job_description: Optional inline job description text.
         model_override: Optional LLM model override.
@@ -43,17 +45,23 @@ async def screen_resume(
         HTTPException: For validation errors, missing job context, or a
             document parsing failure.
     """
-    filename = (resume.filename or "").strip()
-    ext = filename.lower().rsplit(".", 1)[-1] if "." in filename else ""
-    if f".{ext}" not in ALLOWED_EXTENSIONS:
-        raise HTTPException(
-            status_code=400,
-            detail="Only PDF (.pdf) and Word (.docx) files are accepted",
-        )
+    if not resume_text.strip() and resume is None:
+        raise HTTPException(status_code=400, detail="Either a resume file or resume_text is required")
 
-    content = await resume.read()
-    if len(content) > MAX_UPLOAD_BYTES:
-        raise HTTPException(status_code=413, detail="File exceeds the 10MB limit")
+    content: bytes | None = None
+    filename = ""
+    if resume is not None:
+        filename = (resume.filename or "").strip()
+        ext = filename.lower().rsplit(".", 1)[-1] if "." in filename else ""
+        if f".{ext}" not in ALLOWED_EXTENSIONS:
+            raise HTTPException(
+                status_code=400,
+                detail="Only PDF (.pdf) and Word (.docx) files are accepted",
+            )
+
+        content = await resume.read()
+        if len(content) > MAX_UPLOAD_BYTES:
+            raise HTTPException(status_code=413, detail="File exceeds the 10MB limit")
 
     if not jd_id and not job_description:
         raise HTTPException(status_code=422, detail="Either jd_id or job_description is required")
@@ -61,6 +69,7 @@ async def screen_resume(
     try:
         return await service.run_screening(
             content,
+            resume_text=resume_text,
             resume_filename=filename,
             jd_id=jd_id,
             job_description=job_description,

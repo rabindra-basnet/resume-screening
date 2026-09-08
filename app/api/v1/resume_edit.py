@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
 from app.api.deps import get_current_user_or_none, get_resume_edit_service
 from app.config.constants import ALLOWED_EXTENSIONS, MAX_UPLOAD_BYTES
@@ -26,13 +26,18 @@ router = APIRouter(tags=["resume-edit"])
 async def create_edit_session(
     user: UserModel | None = Depends(get_current_user_or_none),
     service: ResumeEditService = Depends(get_resume_edit_service),
-    resume: UploadFile = File(...),
+    resume: UploadFile | None = File(default=None),
+    resume_text: str = Form(default=""),
 ) -> dict:
-    """Upload a resume and create an editable session seeded with its text.
+    """Upload a resume (or paste its text) and create an editable session.
+
+    Either a ``resume`` file or a pasted ``resume_text`` must be supplied so the
+    chat-box screening flow works without requiring a file upload.
 
     Args:
         user: Optional authenticated user.
-        resume: The resume file (PDF or DOCX).
+        resume: The resume file (PDF or DOCX), when provided.
+        resume_text: Raw resume text, when pasted instead of uploaded.
         service: The injected resume editing service.
 
     Returns:
@@ -41,28 +46,34 @@ async def create_edit_session(
     Raises:
         HTTPException: For validation errors or document parsing failures.
     """
-    filename = (resume.filename or "").strip()
-    ext = filename.lower().rsplit(".", 1)[-1] if "." in filename else ""
-    if f".{ext}" not in ALLOWED_EXTENSIONS:
+    if resume is not None:
+        filename = (resume.filename or "").strip()
+        ext = filename.lower().rsplit(".", 1)[-1] if "." in filename else ""
+        if f".{ext}" not in ALLOWED_EXTENSIONS:
+            raise HTTPException(
+                status_code=400,
+                detail="Only PDF (.pdf) and Word (.docx) files are accepted",
+            )
+        content = await resume.read()
+        if len(content) > MAX_UPLOAD_BYTES:
+            raise HTTPException(status_code=413, detail="File exceeds the 10MB limit")
+
+        from app.tools import DocumentParser
+
+        try:
+            resume_text = DocumentParser().extract_text(content, filename)
+        except DocumentParsingError as exc:
+            raise HTTPException(status_code=400, detail=exc.message) from exc
+    elif not resume_text.strip():
         raise HTTPException(
             status_code=400,
-            detail="Only PDF (.pdf) and Word (.docx) files are accepted",
+            detail="Either a resume file or resume_text is required",
         )
-    content = await resume.read()
-    if len(content) > MAX_UPLOAD_BYTES:
-        raise HTTPException(status_code=413, detail="File exceeds the 10MB limit")
-
-    from app.tools import DocumentParser
-
-    try:
-        resume_text = DocumentParser().extract_text(content, filename)
-    except DocumentParsingError as exc:
-        raise HTTPException(status_code=400, detail=exc.message) from exc
 
     session_id = await service.create_session(
-        resume_text=resume_text,
+        resume_text=resume_text.strip() or resume_text,
         user_id=user.id if user else None,
-        resume_filename=filename,
+        resume_filename=resume.filename if resume else None,
     )
     return {"session_id": session_id, "content": resume_text}
 
