@@ -202,7 +202,7 @@ export function CvBuilder() {
         messages: [userBubble, greeting],
       });
 
-      setPanelTab("report");
+      setPanelTab("resume");
     } catch (err) {
       setError(errMsg(err));
     } finally {
