@@ -17,6 +17,7 @@ export function ChatComposer({
   hasSelection,
   selectedFile,
   jobDescription,
+  showQuickPrompts = true,
   onSend,
   onUndo,
   onRedo,
@@ -31,6 +32,7 @@ export function ChatComposer({
   hasSelection?: boolean;
   selectedFile?: File | null;
   jobDescription?: string;
+  showQuickPrompts?: boolean;
   onSend: (content: string, opts?: { file?: File | null; jobDescription?: string }) => void;
   onUndo?: () => void;
   onRedo?: () => void;
@@ -61,24 +63,26 @@ export function ChatComposer({
 
   return (
     <div className="space-y-2.5" data-testid="chat-composer">
-      {/* Quick Prompts Chips */}
-      <div className="scrollbar-none flex items-center gap-1.5 overflow-x-auto pb-0.5">
-        {QUICK_PROMPTS.map((qp) => {
-          const Icon = qp.icon;
-          return (
-            <button
-              key={qp.label}
-              type="button"
-              disabled={busy}
-              onClick={() => send(qp.prompt)}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border/80 bg-card/80 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:border-primary/50 hover:bg-primary/5 hover:text-primary disabled:opacity-50 shadow-2xs cursor-pointer"
-            >
-              <Icon size={12} className="text-primary" />
-              {qp.label}
-            </button>
-          );
-        })}
-      </div>
+      {/* Quick Prompts Chips (optional rendering) */}
+      {showQuickPrompts && (
+        <div className="scrollbar-none flex items-center gap-1.5 overflow-x-auto pb-0.5">
+          {QUICK_PROMPTS.map((qp) => {
+            const Icon = qp.icon;
+            return (
+              <button
+                key={qp.label}
+                type="button"
+                disabled={busy}
+                onClick={() => send(qp.prompt)}
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border/80 bg-card/80 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:border-primary/50 hover:bg-primary/5 hover:text-primary disabled:opacity-50 shadow-2xs cursor-pointer"
+              >
+                <Icon size={12} className="text-primary" />
+                {qp.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Main Composer Box with Integrated Action Pills */}
       <div className="relative rounded-2xl border border-border/70 bg-card p-3 shadow-sm transition-all focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20">

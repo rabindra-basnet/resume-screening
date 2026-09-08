@@ -381,6 +381,7 @@ export function CvBuilder() {
               busy={busyReview}
               selectedFile={setup.selectedFile}
               jobDescription={setup.jobDescription}
+              showQuickPrompts={false}
               submitLabel={busyReview ? "Screening…" : "Voice"}
               onSend={(promptText) => {
                 if (promptText) {
